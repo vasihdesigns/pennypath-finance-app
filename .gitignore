@@ -1,0 +1,16 @@
+# Xcode / Swift
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+.DS_Store
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# macOS
+*.swp
+
+# graphify cache (reports stay tracked)
+graphify-out/cache/

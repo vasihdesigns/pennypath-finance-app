@@ -1,0 +1,100 @@
+//
+//  InstrumentSearchView.swift
+//  PennyPath
+//
+//  Step 2: search instruments within the chosen market. Results are filtered to
+//  that market; picking one pushes the shares form.
+//
+
+import SwiftUI
+
+struct InstrumentSearchView: View {
+    let market: Market
+    let service: MarketService
+
+    @State private var query = ""
+    @State private var results: [SymbolMatch] = []
+    @State private var isSearching = false
+
+    private var trimmedQuery: String { query.trimmingCharacters(in: .whitespaces) }
+
+    var body: some View {
+        List {
+            if trimmedQuery.isEmpty {
+                Section {
+                    Text(promptText)
+                        .font(.footnote)
+                        .foregroundStyle(Theme.inkSecondary)
+                }
+            } else {
+                ForEach(results) { match in
+                    NavigationLink(value: match) {
+                        VStack(alignment: .leading, spacing: 3) {
+                            HStack(spacing: 8) {
+                                Text(match.symbol)
+                                    .font(.body.weight(.semibold))
+                                    .foregroundStyle(Theme.ink)
+                                let typeLabel = InstrumentType.friendly(match.type)
+                                if !typeLabel.isEmpty {
+                                    Text(typeLabel)
+                                        .font(.caption2.weight(.semibold))
+                                        .foregroundStyle(Theme.inkSecondary)
+                                        .padding(.vertical, 2).padding(.horizontal, 6)
+                                        .background(Theme.well, in: Capsule())
+                                }
+                            }
+                            Text(match.name)
+                                .font(.caption)
+                                .foregroundStyle(Theme.inkSecondary)
+                                .lineLimit(1)
+                            if !match.exchange.isEmpty {
+                                Text(match.exchange)
+                                    .font(.caption2)
+                                    .foregroundStyle(Theme.inkTertiary)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .listStyle(.plain)
+        .navigationTitle(market.isAll ? "All markets" : market.name)
+        .navigationBarTitleDisplayMode(.inline)
+        .searchable(text: $query, prompt: searchPrompt)
+        .autocorrectionDisabled()
+        .overlay {
+            if isSearching && results.isEmpty {
+                ProgressView()
+            } else if !trimmedQuery.isEmpty && results.isEmpty && !isSearching {
+                ContentUnavailableView.search(text: query)
+            }
+        }
+        .task(id: query) { await runSearch() }
+        .tint(Theme.green)
+    }
+
+    private var searchPrompt: String {
+        market.isAll ? "Search symbols or companies" : "Search \(market.region.isEmpty ? market.name : market.region)"
+    }
+
+    private var promptText: String {
+        if market.isAll {
+            return "Search any stock, ETF, or fund worldwide — try “Apple”, “TSLA”, or “VWRA.L”."
+        }
+        let suffix = market.suffixes.first.map { " Symbols here end in \($0)." } ?? ""
+        return "Search companies and funds on \(market.name).\(suffix)"
+    }
+
+    private func runSearch() async {
+        let q = trimmedQuery
+        guard !q.isEmpty else { results = []; return }
+        // Debounce; the task is cancelled and restarted as the query changes.
+        try? await Task.sleep(nanoseconds: 350_000_000)
+        if Task.isCancelled { return }
+        isSearching = true
+        defer { isSearching = false }
+        let found = (try? await service.provider.search(q)) ?? []
+        if Task.isCancelled { return }
+        results = found.filter { market.accepts($0) }
+    }
+}
