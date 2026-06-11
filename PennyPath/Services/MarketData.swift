@@ -191,11 +191,19 @@ final class MarketService {
         lastError = nil
         defer { isRefreshing = false }
 
-        // 1. Prices (one symbol at a time keeps us gentle on the public API).
+        // 1. Prices — a few at a time: fast for big portfolios while staying
+        //    gentle on the public API.
         var quotes: [String: Quote] = [:]
-        for holding in holdings {
-            if let quote = try? await provider.quote(holding.symbol) {
-                quotes[holding.symbol] = quote
+        let symbols = Array(Set(holdings.map(\.symbol)))
+        let provider = self.provider
+        for batch in stride(from: 0, to: symbols.count, by: 4).map({ Array(symbols[$0..<min($0 + 4, symbols.count)]) }) {
+            await withTaskGroup(of: (String, Quote?).self) { group in
+                for symbol in batch {
+                    group.addTask { (symbol, try? await provider.quote(symbol)) }
+                }
+                for await (symbol, quote) in group {
+                    if let quote { quotes[symbol] = quote }
+                }
             }
         }
 

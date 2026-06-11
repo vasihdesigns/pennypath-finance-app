@@ -20,6 +20,7 @@ struct HoldingFormView: View {
     var onComplete: (() -> Void)?      // overrides dismiss (used from the search flow)
 
     @State private var shares: Double = 0
+    @FocusState private var sharesFocused: Bool
 
     private var isEditing: Bool { holding != nil }
     private var symbol: String { holding?.symbol ?? match?.symbol ?? "" }
@@ -56,6 +57,7 @@ struct HoldingFormView: View {
                         .font(.amount(34))
                         .foregroundStyle(Theme.ink)
                         .keyboardType(.decimalPad)
+                        .focused($sharesFocused)
                 }
 
                 if isEditing {
@@ -74,6 +76,10 @@ struct HoldingFormView: View {
             }
             ToolbarItem(placement: .confirmationAction) {
                 Button("Save") { save() }.bold().disabled(!canSave)
+            }
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") { sharesFocused = false }.bold()
             }
         }
         .tint(Theme.green)

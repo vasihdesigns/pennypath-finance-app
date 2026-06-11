@@ -6,7 +6,7 @@ A clean, simple personal-finance app for iOS — so clear that even a 10-year-ol
 - 🔴 **Red** = Spending
 - 🟡 **Gold** = Goals
 
-Built with **SwiftUI + SwiftData**. No accounts, no servers, no tracking — everything lives on the device.
+Built with **SwiftUI + SwiftData**. No accounts, no servers, no tracking — your data lives on the device. The only network use is fetching public market prices (Yahoo Finance) for investment symbols you add.
 
 | Home | Net Worth | Spending | Goals | Coach |
 |---|---|---|---|---|
@@ -27,7 +27,7 @@ What you spent **this month**, how it compares to last month (down is good and s
 Save toward things you want — a bike, a trip, a rainy-day fund. Each goal has a gold progress bar, an "X to go" number, and a suggested **monthly amount** to hit your target date. Add or take out money any time.
 
 ### ✨ Coach (the "AI")
-A friendly money coach that reads your real numbers and writes short, personalized tips: spending trends, your biggest category, end-of-month projections, goal pacing, rainy-day-fund health, and net-worth advice. **It runs entirely on the device** — nothing ever leaves your phone. See [Swapping in a real LLM](#swapping-in-a-real-llm) to upgrade it.
+A friendly money coach that reads your real numbers and writes short, personalized tips: spending trends, your biggest category, end-of-month projections, goal pacing, rainy-day-fund health, and net-worth advice. **It runs entirely on the device** — your numbers never leave your phone. See [Swapping in a real LLM](#swapping-in-a-real-llm) to upgrade it.
 
 ### 🎬 Demo Mode
 A switch in **Settings** that fills the app with a rich example world (lots of accounts, three months of spending, a mix of goals) so you can explore every screen or show it off. It's **non-destructive**: Demo Mode runs on a separate in-memory store, so your own data is never touched and comes right back the moment you switch it off. A "Demo data" banner appears on Home whenever it's active.
@@ -51,6 +51,16 @@ xcodebuild -project PennyPath.xcodeproj -scheme PennyPath \
 
 > To run on a physical device, open the project, select your team under
 > **Signing & Capabilities**, and change the bundle identifier if needed.
+
+### Tests
+
+Unit tests live in `PennyPathTests` (insights engine, money/date helpers, goal
+pacing, market scoping, seeding guards, snapshot recording):
+
+```bash
+xcodebuild -project PennyPath.xcodeproj -scheme PennyPath \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' test
+```
 
 ## How it's built
 

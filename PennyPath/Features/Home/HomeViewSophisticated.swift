@@ -72,8 +72,8 @@ struct HomeViewSophisticated: View {
             }
         }
         .sheet(isPresented: $showingSettings) { SettingsView() }
-        .onAppear { syncHistory() }
-        .onChange(of: netWorth) { _, _ in recordSnapshot() }
+        .onAppear { NetWorthHistory.record(in: context) }
+        .onChange(of: netWorth) { _, _ in NetWorthHistory.record(in: context) }
     }
 
     // MARK: Net worth hero (deep emerald)
@@ -183,26 +183,7 @@ struct HomeViewSophisticated: View {
         }
     }
 
-    // MARK: History (same behaviour as the real Home)
-
-    private func syncHistory() {
-        guard !accounts.isEmpty else { return }
-        if snapshots.count < 2 {
-            snapshots.forEach { context.delete($0) }
-            NetWorthSnapshot.seedHistory(current: netWorth, into: context)
-        } else {
-            recordSnapshot()
-        }
-    }
-
-    private func recordSnapshot() {
-        guard !accounts.isEmpty else { return }
-        if let today = snapshots.last(where: { $0.date.isSameDay(as: .now) }) {
-            if today.value != netWorth { today.value = netWorth }
-        } else {
-            context.insert(NetWorthSnapshot(date: .now, value: netWorth))
-        }
-    }
+    // MARK: History — real points only (NetWorthHistory)
 
     // MARK: Sophisticated palette (deep, muted, harmonious)
 

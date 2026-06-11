@@ -43,35 +43,43 @@ enum DemoData {
         Investments.rebuild(holdings: holdings, in: context)
 
         // Expenses across three months. This month is calmer than last month
-        // so the coach has something cheerful to say.
-        func add(_ amount: Double, _ category: ExpenseCategory, _ note: String, daysAgo: Int) {
-            context.insert(Expense(amount: amount, category: category, note: note,
-                                   date: now.adding(days: -daysAgo)))
+        // so the coach has something cheerful to say. Dates are anchored to
+        // month starts so the story holds on any install date.
+        func thisMonth(_ amount: Double, _ category: ExpenseCategory, _ note: String, daysAgo: Int) {
+            let date = max(now.adding(days: -daysAgo), now.startOfMonth)
+            context.insert(Expense(amount: amount, category: category, note: note, date: date))
+        }
+        func monthAgo(_ amount: Double, _ category: ExpenseCategory, _ note: String, months: Int, day: Int) {
+            let cal = Calendar.current
+            let base = now.adding(months: -months).startOfMonth
+            let maxDay = cal.range(of: .day, in: .month, for: base)?.count ?? 28
+            let date = cal.date(byAdding: .day, value: min(day, maxDay) - 1, to: base) ?? base
+            context.insert(Expense(amount: amount, category: category, note: note, date: date))
         }
         // This month
-        add(16.00, .food, "Lunch", daysAgo: 0)
-        add(9.50, .transport, "Bus pass", daysAgo: 1)
-        add(24.99, .fun, "New game", daysAgo: 2)
-        add(58.40, .food, "Groceries", daysAgo: 3)
-        add(34.00, .health, "Pharmacy", daysAgo: 5)
-        add(45.00, .shopping, "T-shirt", daysAgo: 6)
-        add(72.00, .bills, "Phone + internet", daysAgo: 8)
-        add(13.25, .food, "Smoothie", daysAgo: 9)
-        add(28.00, .transport, "Gas", daysAgo: 11)
+        thisMonth(16.00, .food, "Lunch", daysAgo: 0)
+        thisMonth(9.50, .transport, "Bus pass", daysAgo: 1)
+        thisMonth(24.99, .fun, "New game", daysAgo: 2)
+        thisMonth(58.40, .food, "Groceries", daysAgo: 3)
+        thisMonth(34.00, .health, "Pharmacy", daysAgo: 5)
+        thisMonth(45.00, .shopping, "T-shirt", daysAgo: 6)
+        thisMonth(72.00, .bills, "Phone + internet", daysAgo: 8)
+        thisMonth(13.25, .food, "Smoothie", daysAgo: 9)
+        thisMonth(28.00, .transport, "Gas", daysAgo: 11)
         // Last month
-        add(62.00, .food, "Groceries", daysAgo: 18)
-        add(40.00, .transport, "Gas", daysAgo: 21)
-        add(55.00, .fun, "Concert ticket", daysAgo: 24)
-        add(120.00, .shopping, "Sneakers", daysAgo: 27)
-        add(72.00, .bills, "Phone + internet", daysAgo: 33)
-        add(48.00, .food, "Dinner out", daysAgo: 36)
-        add(95.00, .home, "Desk lamp", daysAgo: 39)
+        monthAgo(62.00, .food, "Groceries", months: 1, day: 24)
+        monthAgo(40.00, .transport, "Gas", months: 1, day: 20)
+        monthAgo(55.00, .fun, "Concert ticket", months: 1, day: 16)
+        monthAgo(120.00, .shopping, "Sneakers", months: 1, day: 12)
+        monthAgo(72.00, .bills, "Phone + internet", months: 1, day: 8)
+        monthAgo(48.00, .food, "Dinner out", months: 1, day: 5)
+        monthAgo(95.00, .home, "Desk lamp", months: 1, day: 2)
         // Two months ago
-        add(60.00, .food, "Groceries", daysAgo: 50)
-        add(38.00, .health, "Dentist", daysAgo: 55)
-        add(72.00, .bills, "Phone + internet", daysAgo: 62)
-        add(150.00, .fun, "Theme park", daysAgo: 66)
-        add(42.00, .transport, "Gas", daysAgo: 71)
+        monthAgo(60.00, .food, "Groceries", months: 2, day: 22)
+        monthAgo(38.00, .health, "Dentist", months: 2, day: 17)
+        monthAgo(72.00, .bills, "Phone + internet", months: 2, day: 10)
+        monthAgo(150.00, .fun, "Theme park", months: 2, day: 6)
+        monthAgo(42.00, .transport, "Gas", months: 2, day: 2)
 
         // Goals — one finished, two in progress, one big and far off.
         let goals: [Goal] = [

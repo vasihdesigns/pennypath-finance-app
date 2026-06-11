@@ -126,6 +126,9 @@ struct ProgressRing: View {
                 .rotationEffect(.degrees(-90))
                 .animation(.spring(duration: 0.5), value: value)
         }
+        .accessibilityElement()
+        .accessibilityLabel("Progress")
+        .accessibilityValue(percentText(value))
     }
 }
 
@@ -150,6 +153,9 @@ struct SplitBar: View {
         }
         .frame(height: height)
         .clipShape(Capsule())
+        .accessibilityElement()
+        .accessibilityLabel("Own versus owe")
+        .accessibilityValue("\(percentText(leading / total)) owned, \(percentText(trailing / total)) owed")
     }
 }
 
@@ -271,6 +277,8 @@ struct AmountField: View {
     @Binding var amount: Double
     var tint: Color = Theme.ink
 
+    @FocusState private var focused: Bool
+
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Space.sm) {
             Text(title.uppercased())
@@ -285,6 +293,15 @@ struct AmountField: View {
                     .font(.amount(40))
                     .foregroundStyle(tint)
                     .keyboardType(.decimalPad)
+                    .focused($focused)
+            }
+        }
+        // The decimal pad has no return key; give it a Done button so the
+        // typed amount is committed before tapping Save.
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") { focused = false }.bold()
             }
         }
     }
@@ -296,6 +313,17 @@ struct Sparkline: View {
     let values: [Double]
     var tint: Color = Theme.green
     var lineWidth: CGFloat = 2.5
+
+    /// VoiceOver summary: where the trend started and where it is now.
+    private var trendSummary: String {
+        guard let first = values.first, let last = values.last, values.count >= 2 else {
+            return "Not enough history yet"
+        }
+        if first == 0 { return "Now \(money(last))" }
+        let change = (last - first) / abs(first)
+        let direction = change >= 0 ? "up" : "down"
+        return "\(direction) \(percentText(abs(change))), now \(money(last))"
+    }
 
     var body: some View {
         GeometryReader { geo in
@@ -316,6 +344,9 @@ struct Sparkline: View {
                 }
             }
         }
+        .accessibilityElement()
+        .accessibilityLabel("Trend")
+        .accessibilityValue(trendSummary)
     }
 
     private func points(in size: CGSize) -> [CGPoint] {

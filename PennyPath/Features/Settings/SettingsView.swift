@@ -21,7 +21,8 @@ struct SettingsView: View {
     @AppStorage("appearance") private var appearance = AppAppearance.system.rawValue
     @AppStorage("developerMode") private var developerMode = false
     @AppStorage("devHomeStyle") private var devHomeStyle = DevHomeStyle.premium.rawValue
-    @AppStorage("didCompleteOnboarding") private var didOnboard = true
+    // Same default as PennyPathApp — the two must never disagree.
+    @AppStorage("didCompleteOnboarding") private var didOnboard = false
 
     @Query private var accounts: [Account]
     @Query private var expenses: [Expense]
@@ -64,7 +65,7 @@ struct SettingsView: View {
                     .pickerStyle(.segmented)
                 }
 
-                Section("Currency") {
+                Section {
                     NavigationLink {
                         CurrencyPickerView(selection: $currencyCode)
                     } label: {
@@ -74,6 +75,10 @@ struct SettingsView: View {
                             Text(currencyCode).foregroundStyle(Theme.inkSecondary)
                         }
                     }
+                } header: {
+                    Text("Currency")
+                } footer: {
+                    Text("Changes the symbol your numbers are shown with — amounts you've entered aren't converted. Investment values are converted to the new currency on their next price refresh.")
                 }
 
                 Section {
@@ -120,7 +125,7 @@ struct SettingsView: View {
                 } header: {
                     Text("About")
                 } footer: {
-                    Text("Your money coach runs entirely on this device. None of your numbers ever leave your phone.")
+                    Text("Your money coach runs entirely on this device — your balances, spending, and goals never leave your phone. The only network use is fetching public prices for investment symbols you add.")
                 }
 
                 Section {
@@ -162,7 +167,9 @@ struct SettingsView: View {
                     }
 
                     Section("Diagnostics") {
-                        LabeledContent("Active store", value: store.isDemo ? "Demo · in-memory" : "Real · on disk")
+                        LabeledContent("Active store", value: store.isDemo
+                            ? "Demo · in-memory"
+                            : (store.isFallbackStore ? "⚠️ Fallback · in-memory" : "Real · on disk"))
                         LabeledContent("Accounts", value: "\(accounts.count)")
                         LabeledContent("Expenses", value: "\(expenses.count)")
                         LabeledContent("Goals", value: "\(goals.count)")
@@ -236,7 +243,7 @@ struct SettingsView: View {
     private func resetFirstRun() {
         dismiss()
         DispatchQueue.main.async {
-            UserDefaults.standard.removeObject(forKey: "didSeedSampleData")
+            UserDefaults.standard.removeObject(forKey: SampleData.seededKey)
             didOnboard = false
         }
     }

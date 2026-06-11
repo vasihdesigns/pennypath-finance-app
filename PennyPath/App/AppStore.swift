@@ -20,19 +20,24 @@ final class AppStore {
     /// The container currently driving the UI (real on first launch, demo when toggled).
     private(set) var container: ModelContainer
 
+    /// True when the on-disk store failed to open and the app is running on a
+    /// throwaway in-memory store — changes will NOT survive a relaunch.
+    /// The UI must warn the user when this is set.
+    private(set) var isFallbackStore = false
+
     /// Flip this to swap the whole app between real data and the demo world.
     var isDemo: Bool = false {
         didSet {
             guard oldValue != isDemo else { return }
-            container = Self.makeContainer(isDemo: isDemo)
+            (container, isFallbackStore) = Self.makeContainer(isDemo: isDemo)
         }
     }
 
     init() {
-        container = Self.makeContainer(isDemo: false)
+        (container, isFallbackStore) = Self.makeContainer(isDemo: false)
     }
 
-    private static func makeContainer(isDemo: Bool) -> ModelContainer {
+    private static func makeContainer(isDemo: Bool) -> (ModelContainer, isFallback: Bool) {
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: isDemo)
         do {
             let container = try ModelContainer(for: schema, configurations: [config])
@@ -44,11 +49,12 @@ final class AppStore {
                 SampleData.seedIfNeeded(in: context)
             }
             if context.hasChanges { try? context.save() }
-            return container
+            return (container, false)
         } catch {
             // Last resort: an empty in-memory store so the app still launches.
+            // isFallback = true so the UI can warn that nothing will be saved.
             let fallback = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-            return try! ModelContainer(for: schema, configurations: [fallback])
+            return (try! ModelContainer(for: schema, configurations: [fallback]), !isDemo)
         }
     }
 }

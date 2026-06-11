@@ -10,13 +10,22 @@ import Foundation
 import SwiftData
 
 enum SampleData {
-    private static let seededKey = "didSeedSampleData"
+    static let seededKey = "didSeedSampleData"
 
-    /// Seed once on first launch.
+    /// Seed once on first launch — and only into an empty store, so samples
+    /// can never pile on top of real data (e.g. after "Reset first-run state").
     static func seedIfNeeded(in context: ModelContext) {
         guard !UserDefaults.standard.bool(forKey: seededKey) else { return }
-        seed(in: context)
+        if isEmpty(context) { seed(in: context) }
         UserDefaults.standard.set(true, forKey: seededKey)
+    }
+
+    static func isEmpty(_ context: ModelContext) -> Bool {
+        func count<T: PersistentModel>(_ type: T.Type) -> Int {
+            (try? context.fetchCount(FetchDescriptor<T>())) ?? 0
+        }
+        return count(Account.self) == 0 && count(Expense.self) == 0
+            && count(Goal.self) == 0 && count(Holding.self) == 0
     }
 
     /// Wipe and reload examples (Settings → Load sample data).
@@ -63,29 +72,40 @@ enum SampleData {
         holdings.forEach { context.insert($0) }
         Investments.rebuild(holdings: holdings, in: context)
 
-        // Expenses — this month is calmer than last month, so the coach can cheer.
+        // Expenses — this month is calmer than last month, so the coach can
+        // cheer. Dates are anchored to month starts (not fixed day offsets) so
+        // the "this month vs last month" story holds on any install date.
         let now = Date.now
-        func add(_ amount: Double, _ category: ExpenseCategory, _ note: String, daysAgo: Int) {
-            context.insert(Expense(amount: amount, category: category, note: note,
-                                   date: now.adding(days: -daysAgo)))
+        // Recent, but never spilling into the previous month.
+        func thisMonth(_ amount: Double, _ category: ExpenseCategory, _ note: String, daysAgo: Int) {
+            let date = max(now.adding(days: -daysAgo), now.startOfMonth)
+            context.insert(Expense(amount: amount, category: category, note: note, date: date))
+        }
+        // A specific day of an earlier month (clamped to that month's length).
+        func monthAgo(_ amount: Double, _ category: ExpenseCategory, _ note: String, months: Int, day: Int) {
+            let cal = Calendar.current
+            let base = now.adding(months: -months).startOfMonth
+            let maxDay = cal.range(of: .day, in: .month, for: base)?.count ?? 28
+            let date = cal.date(byAdding: .day, value: min(day, maxDay) - 1, to: base) ?? base
+            context.insert(Expense(amount: amount, category: category, note: note, date: date))
         }
         // This month
-        add(14.50, .food, "Lunch", daysAgo: 0)
-        add(28.00, .transport, "Gas", daysAgo: 1)
-        add(19.99, .fun, "New game", daysAgo: 2)
-        add(46.30, .food, "Groceries", daysAgo: 3)
-        add(22.00, .health, "Pharmacy", daysAgo: 4)
-        add(54.00, .shopping, "Sneakers", daysAgo: 5)
-        add(60.00, .bills, "Phone bill", daysAgo: 6)
-        add(12.75, .food, "Smoothie", daysAgo: 7)
+        thisMonth(14.50, .food, "Lunch", daysAgo: 0)
+        thisMonth(28.00, .transport, "Gas", daysAgo: 1)
+        thisMonth(19.99, .fun, "New game", daysAgo: 2)
+        thisMonth(46.30, .food, "Groceries", daysAgo: 3)
+        thisMonth(22.00, .health, "Pharmacy", daysAgo: 4)
+        thisMonth(54.00, .shopping, "Sneakers", daysAgo: 5)
+        thisMonth(60.00, .bills, "Phone bill", daysAgo: 6)
+        thisMonth(12.75, .food, "Smoothie", daysAgo: 7)
         // Last month
-        add(52.00, .food, "Groceries", daysAgo: 14)
-        add(40.00, .transport, "Gas", daysAgo: 18)
-        add(35.00, .fun, "Movie night", daysAgo: 22)
-        add(90.00, .shopping, "Jacket", daysAgo: 28)
-        add(60.00, .bills, "Phone bill", daysAgo: 33)
-        add(38.00, .food, "Dinner out", daysAgo: 36)
-        add(70.00, .home, "Room decor", daysAgo: 38)
+        monthAgo(52.00, .food, "Groceries", months: 1, day: 25)
+        monthAgo(40.00, .transport, "Gas", months: 1, day: 21)
+        monthAgo(35.00, .fun, "Movie night", months: 1, day: 17)
+        monthAgo(90.00, .shopping, "Jacket", months: 1, day: 11)
+        monthAgo(60.00, .bills, "Phone bill", months: 1, day: 6)
+        monthAgo(38.00, .food, "Dinner out", months: 1, day: 3)
+        monthAgo(70.00, .home, "Room decor", months: 1, day: 1)
 
         // Goals — one finished, one in progress, one just started.
         let goals: [Goal] = [

@@ -8,6 +8,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 enum Theme {
 
@@ -58,13 +59,19 @@ enum Theme {
 // MARK: - Friendly, rounded typography (welcoming even for a 10 year old)
 
 extension Font {
+    /// Scale a design size with the user's Dynamic Type setting, so big
+    /// headings and money numbers grow (and shrink) with accessibility text.
+    static func scaled(_ size: CGFloat) -> CGFloat {
+        UIFontMetrics(forTextStyle: .largeTitle).scaledValue(for: size)
+    }
+
     static func display(_ size: CGFloat, weight: Font.Weight = .bold) -> Font {
-        .system(size: size, weight: weight, design: .rounded)
+        .system(size: scaled(size), weight: weight, design: .rounded)
     }
 
     /// Big money numbers. Rounded + monospaced digits so they line up neatly.
     static func amount(_ size: CGFloat, weight: Font.Weight = .bold) -> Font {
-        .system(size: size, weight: weight, design: .rounded).monospacedDigit()
+        .system(size: scaled(size), weight: weight, design: .rounded).monospacedDigit()
     }
 }
 

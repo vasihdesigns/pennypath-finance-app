@@ -46,13 +46,13 @@ enum Sage {
 // MARK: - Type
 
 extension Font {
-    /// Big editorial headings.
+    /// Big editorial headings (scaled with Dynamic Type).
     static func sageDisplay(_ size: CGFloat, weight: Font.Weight = .semibold) -> Font {
-        .system(size: size, weight: weight)
+        .system(size: Font.scaled(size), weight: weight)
     }
-    /// Big money numbers with lined-up digits.
+    /// Big money numbers with lined-up digits (scaled with Dynamic Type).
     static func sageAmount(_ size: CGFloat, weight: Font.Weight = .semibold) -> Font {
-        .system(size: size, weight: weight).monospacedDigit()
+        .system(size: Font.scaled(size), weight: weight).monospacedDigit()
     }
 }
 

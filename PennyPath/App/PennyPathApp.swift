@@ -12,6 +12,7 @@ import SwiftData
 @main
 struct PennyPathApp: App {
     @State private var store = AppStore()
+    @Environment(\.scenePhase) private var scenePhase
     @AppStorage("didCompleteOnboarding") private var didOnboard = false
     @AppStorage("appearance") private var appearance = AppAppearance.system.rawValue
 
@@ -33,6 +34,13 @@ struct PennyPathApp: App {
             }
             .animation(.easeInOut(duration: 0.4), value: didOnboard)
             .preferredColorScheme((AppAppearance(rawValue: appearance) ?? .system).colorScheme)
+            // One daily net-worth point, recorded no matter which tab the
+            // user lives in (views also record when balances change).
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active {
+                    NetWorthHistory.record(in: store.container.mainContext)
+                }
+            }
         }
     }
 }

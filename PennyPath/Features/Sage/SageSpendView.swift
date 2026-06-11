@@ -158,6 +158,9 @@ struct SageSpendView: View {
                 }
             }
             .frame(height: 14)
+            // The legend right below reads out every category and amount,
+            // so the bar itself is decoration for VoiceOver.
+            .accessibilityHidden(true)
 
             legend
         }

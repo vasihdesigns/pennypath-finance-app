@@ -22,8 +22,10 @@ final class NetWorthSnapshot {
 }
 
 extension NetWorthSnapshot {
-    /// Seed a gently rising weekly history that ends at `current` today,
-    /// so the sparkline looks alive the moment the app opens.
+    /// Seed a gently rising weekly history that ends at `current` today.
+    /// SAMPLE/DEMO DATA ONLY — this invents points that never happened, so it
+    /// must never run against a real user's store. Real charts are built from
+    /// daily `NetWorthHistory.record` points.
     static func seedHistory(current: Double, into context: ModelContext, now: Date = .now, weeks: Int = 26) {
         guard current != 0 else { return }
         let start = current * 0.8

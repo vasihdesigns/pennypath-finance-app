@@ -14,8 +14,14 @@ struct GoalDetailView: View {
 
     @Bindable var goal: Goal
 
+    /// Which way the update-savings sheet should open.
+    private enum ContributeMode: String, Identifiable {
+        case add, withdraw
+        var id: String { rawValue }
+    }
+
     @State private var showingEdit = false
-    @State private var showingContribute = false
+    @State private var contribute: ContributeMode?
 
     var body: some View {
         ScrollView {
@@ -37,7 +43,9 @@ struct GoalDetailView: View {
             }
         }
         .sheet(isPresented: $showingEdit) { GoalFormView(goal: goal) }
-        .sheet(isPresented: $showingContribute) { GoalContributeView(goal: goal) }
+        .sheet(item: $contribute) { mode in
+            GoalContributeView(goal: goal, startAdding: mode == .add)
+        }
         .tint(Theme.gold)
     }
 
@@ -93,14 +101,14 @@ struct GoalDetailView: View {
     private var actions: some View {
         VStack(spacing: Theme.Space.md) {
             Button {
-                showingContribute = true
+                contribute = .add
             } label: {
                 Label("Add money", systemImage: "plus")
             }
             .buttonStyle(PrimaryButtonStyle(tint: Theme.gold, foreground: .white))
 
             if goal.savedAmount > 0 {
-                Button("Take some out") { showingContribute = true }
+                Button("Take some out") { contribute = .withdraw }
                     .buttonStyle(SoftButtonStyle(tint: Theme.ink))
             }
         }
@@ -114,7 +122,12 @@ struct GoalContributeView: View {
     @Bindable var goal: Goal
 
     @State private var amount: Double = 0
-    @State private var isAdding = true
+    @State private var isAdding: Bool
+
+    init(goal: Goal, startAdding: Bool = true) {
+        _goal = Bindable(goal)
+        _isAdding = State(initialValue: startAdding)
+    }
 
     private var canSave: Bool { amount > 0 }
 
@@ -135,6 +148,11 @@ struct GoalContributeView: View {
                     Text("Saved now: \(money(goal.savedAmount)) of \(money(goal.targetAmount))")
                         .font(.footnote)
                         .foregroundStyle(Theme.inkTertiary)
+
+                    Text("Goal savings are their own tally — this doesn't move money in or out of your accounts.")
+                        .font(.caption)
+                        .foregroundStyle(Theme.inkTertiary)
+                        .multilineTextAlignment(.center)
                 }
                 .padding(Theme.Space.lg)
             }

@@ -52,6 +52,10 @@ struct CurrencyPickerView: View {
 
     var body: some View {
         List {
+            Section {
+            } footer: {
+                Text("Picking a currency changes how amounts are written, not their value — existing numbers aren't converted.")
+            }
             ForEach(filtered) { option in
                 Button {
                     selection = option.code

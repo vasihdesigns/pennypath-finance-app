@@ -12,6 +12,7 @@ import SwiftUI
 import SwiftData
 
 struct SageWorthView: View {
+    @Environment(AppStore.self) private var store
     @Environment(\.modelContext) private var context
     @Query(sort: \Account.balance, order: .reverse) private var accounts: [Account]
     @Query private var holdings: [Holding]
@@ -62,6 +63,8 @@ struct SageWorthView: View {
             VStack(alignment: .leading, spacing: 28) {
                 header
 
+                if store.isDemo { demoBanner }
+
                 if accounts.isEmpty && holdings.isEmpty {
                     emptyCard
                 } else {
@@ -93,13 +96,31 @@ struct SageWorthView: View {
         .task { await refresh() }
         .onChange(of: holdings.count) { _, _ in Task { await refresh() } }
         .onChange(of: currencyCode) { _, _ in Task { await refresh() } }
-        .onAppear { syncHistory() }
-        .onChange(of: netWorth) { _, _ in recordSnapshot() }
+        .onAppear { NetWorthHistory.record(in: context) }
+        .onChange(of: netWorth) { _, _ in NetWorthHistory.record(in: context) }
         .tint(Sage.green)
     }
 
     private func refresh() async {
         await market.refresh(holdings: holdings, displayCurrency: currencyCode, in: context)
+    }
+
+    // MARK: Demo banner
+
+    private var demoBanner: some View {
+        HStack(spacing: 10) {
+            Text("👀").font(.body)
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Demo data").font(.footnote.weight(.bold)).foregroundStyle(Sage.ink)
+                Text("Exploring an example world. Your real data is safe.")
+                    .font(.caption).foregroundStyle(Sage.inkSoft)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(Sage.terracotta.opacity(0.12),
+                    in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     // MARK: Header
@@ -388,24 +409,4 @@ struct SageWorthView: View {
         .padding(.top, 30)
     }
 
-    // MARK: History (same behaviour as the classic Home)
-
-    private func syncHistory() {
-        guard !accounts.isEmpty else { return }
-        if snapshots.count < 2 {
-            snapshots.forEach { context.delete($0) }
-            NetWorthSnapshot.seedHistory(current: netWorth, into: context)
-        } else {
-            recordSnapshot()
-        }
-    }
-
-    private func recordSnapshot() {
-        guard !accounts.isEmpty else { return }
-        if let today = snapshots.last(where: { $0.date.isSameDay(as: .now) }) {
-            if today.value != netWorth { today.value = netWorth }
-        } else {
-            context.insert(NetWorthSnapshot(date: .now, value: netWorth))
-        }
-    }
 }

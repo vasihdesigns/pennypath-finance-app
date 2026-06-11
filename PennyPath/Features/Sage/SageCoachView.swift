@@ -121,7 +121,7 @@ struct SageCoachView: View {
     }
 
     private var privacyNote: some View {
-        Text("🔒 Tips are made right here on your phone from your own numbers. Nothing is ever sent anywhere.")
+        Text("🔒 Tips are made right here on your phone from your own numbers — they're never sent anywhere. (Only investment price lookups use the internet.)")
             .font(.caption)
             .foregroundStyle(Sage.inkFaint)
             .multilineTextAlignment(.center)
