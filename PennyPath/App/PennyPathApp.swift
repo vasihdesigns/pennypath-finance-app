@@ -27,7 +27,7 @@ struct PennyPathApp: App {
                     .environment(store)
 
                 if !didOnboard {
-                    OnboardingView { didOnboard = true }
+                    SpectrumOnboardingView { didOnboard = true }
                         .transition(.opacity)
                         .zIndex(1)
                 }

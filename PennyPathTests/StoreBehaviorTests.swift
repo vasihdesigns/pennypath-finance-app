@@ -19,7 +19,8 @@ final class StoreBehaviorTests: XCTestCase {
 
     override func setUp() async throws {
         let schema = Schema([Account.self, Expense.self, Goal.self,
-                             CategoryBudget.self, NetWorthSnapshot.self, Holding.self])
+                             CategoryBudget.self, NetWorthSnapshot.self, Holding.self,
+                             UpcomingPayment.self])
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         container = try ModelContainer(for: schema, configurations: [config])
         context = ModelContext(container)
@@ -94,5 +95,52 @@ final class StoreBehaviorTests: XCTestCase {
             .sorted { $0.date < $1.date }
         XCTAssertEqual(snapshots.count, 11)
         XCTAssertEqual(snapshots.last?.value, 1_000)
+    }
+
+    // MARK: Investments auto-account
+
+    func testInvestmentsAccountIsRemovedWhenLastHoldingGoes() {
+        let holding = Holding(symbol: "AAPL", shares: 1, cachedValueInBase: 100)
+        context.insert(holding)
+        Investments.rebuild(holdings: [holding], in: context)
+        XCTAssertEqual(count(Account.self), 1, "a linked Investments account is created")
+
+        // All holdings gone → the auto-account is removed, not left at $0.
+        context.delete(holding)
+        Investments.rebuild(holdings: [], in: context)
+        XCTAssertEqual(count(Account.self), 0, "no stray $0 Investments account lingers")
+    }
+
+    // MARK: Store recovery
+
+    func testUnreadableStoreIsSetAsideAndReplacedWithAFreshOne() throws {
+        UserDefaults.standard.set(true, forKey: SampleData.seededKey)
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("pennypath-recovery-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        // A garbage file where the database should be: opening must fail.
+        let storeURL = dir.appendingPathComponent("test.store")
+        try Data("not a database".utf8).write(to: storeURL)
+
+        let (recovered, health) = AppStore.makeContainer(isDemo: false, storeURL: storeURL)
+
+        XCTAssertEqual(health, .resetAfterFailure)
+
+        // The garbage was kept on disk, not deleted.
+        let siblings = try FileManager.default.contentsOfDirectory(atPath: dir.path)
+        XCTAssertTrue(siblings.contains { $0.contains(".unreadable-") },
+                      "the unreadable file must be set aside, not destroyed")
+
+        // The replacement store really persists: write, reopen, read back.
+        let writeContext = ModelContext(recovered)
+        writeContext.insert(Account(name: "Recovered", category: .cash, balance: 7))
+        try writeContext.save()
+
+        let (reopened, secondHealth) = AppStore.makeContainer(isDemo: false, storeURL: storeURL)
+        XCTAssertEqual(secondHealth, .healthy)
+        let fetched = try ModelContext(reopened).fetch(FetchDescriptor<Account>())
+        XCTAssertEqual(fetched.map(\.name), ["Recovered"])
     }
 }

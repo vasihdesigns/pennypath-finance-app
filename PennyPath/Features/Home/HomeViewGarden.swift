@@ -28,8 +28,8 @@ struct HomeViewGarden: View {
 
     // MARK: Numbers
 
-    private var assets: Double { accounts.filter { $0.category.isAsset }.reduce(0) { $0 + $1.balance } }
-    private var debts: Double { accounts.filter { !$0.category.isAsset }.reduce(0) { $0 + $1.balance } }
+    private var assets: Double { accounts.filter { $0.category.isAsset }.reduce(0) { $0 + $1.baseBalance } }
+    private var debts: Double { accounts.filter { !$0.category.isAsset }.reduce(0) { $0 + $1.baseBalance } }
     private var netWorth: Double { assets - debts }
 
     /// Share of your money that's truly yours (debt-free). Healthier soil = richer grass.

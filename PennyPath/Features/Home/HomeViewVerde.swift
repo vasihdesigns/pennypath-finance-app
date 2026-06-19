@@ -26,8 +26,8 @@ struct HomeViewVerde: View {
     // MARK: Data
 
     private var netWorth: Double { accounts.reduce(0) { $0 + $1.signedBalance } }
-    private var assetTotal: Double { accounts.filter { $0.category.isAsset }.reduce(0) { $0 + $1.balance } }
-    private var debtTotal: Double { accounts.filter { !$0.category.isAsset }.reduce(0) { $0 + $1.balance } }
+    private var assetTotal: Double { accounts.filter { $0.category.isAsset }.reduce(0) { $0 + $1.baseBalance } }
+    private var debtTotal: Double { accounts.filter { !$0.category.isAsset }.reduce(0) { $0 + $1.baseBalance } }
     private var trendValues: [Double] { Array(snapshots.suffix(60)).map(\.value) }
     private var hasTrend: Bool { trendValues.count >= 2 }
     private var monthChange: Double? {

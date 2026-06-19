@@ -27,8 +27,8 @@ struct HomeViewRings: View {
 
     // MARK: Numbers
 
-    private var assets: Double { accounts.filter { $0.category.isAsset }.reduce(0) { $0 + $1.balance } }
-    private var debts: Double { accounts.filter { !$0.category.isAsset }.reduce(0) { $0 + $1.balance } }
+    private var assets: Double { accounts.filter { $0.category.isAsset }.reduce(0) { $0 + $1.baseBalance } }
+    private var debts: Double { accounts.filter { !$0.category.isAsset }.reduce(0) { $0 + $1.baseBalance } }
     private var netWorth: Double { assets - debts }
 
     /// Green ring: share of your money that's truly yours (debt-free).

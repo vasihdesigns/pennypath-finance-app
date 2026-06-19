@@ -9,8 +9,12 @@
 import SwiftUI
 
 struct InstrumentSearchView: View {
+    @Environment(\.dismiss) private var dismiss
     let market: Market
     let service: MarketService
+    /// Shown when this is the root of its own flow (e.g. the fund search), so the
+    /// sheet can be dismissed without a market-picker behind it.
+    var showsCancel: Bool = false
 
     @State private var query = ""
     @State private var results: [SymbolMatch] = []
@@ -58,8 +62,13 @@ struct InstrumentSearchView: View {
             }
         }
         .listStyle(.plain)
-        .navigationTitle(market.isAll ? "All markets" : market.name)
+        .navigationTitle(market.name)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if showsCancel {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+            }
+        }
         .searchable(text: $query, prompt: searchPrompt)
         .autocorrectionDisabled()
         .overlay {
@@ -78,6 +87,7 @@ struct InstrumentSearchView: View {
     }
 
     private var promptText: String {
+        if let hint = market.searchHint { return hint }
         if market.isAll {
             return "Search any stock, ETF, or fund worldwide — try “Apple”, “TSLA”, or “VWRA.L”."
         }

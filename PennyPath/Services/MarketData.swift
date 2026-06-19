@@ -36,6 +36,10 @@ struct SymbolMatch: Identifiable, Hashable {
 
 /// Friendly labels and unit nouns for instrument types.
 enum InstrumentType {
+    /// Synthetic quoteType for curated precious-metal holdings. They're priced
+    /// from commodity-futures symbols (GC=F, SI=F, …) but valued per troy ounce.
+    static let preciousMetal = "PRECIOUSMETAL"
+
     static func friendly(_ raw: String) -> String {
         switch raw.uppercased().replacingOccurrences(of: " ", with: "") {
         case "EQUITY", "STOCK", "EQUITIES": return "Stock"
@@ -46,6 +50,7 @@ enum InstrumentType {
         case "CURRENCY": return "FX"
         case "FUTURE": return "Future"
         case "OPTION": return "Option"
+        case "PRECIOUSMETAL": return "Precious Metal"
         case "": return ""
         default: return raw.capitalized
         }
@@ -55,9 +60,19 @@ enum InstrumentType {
         raw.uppercased().contains("MUTUAL") || raw.uppercased() == "FUND"
     }
 
-    /// "units" for mutual funds, "shares" otherwise.
-    static func unitNoun(_ raw: String) -> String { isFund(raw) ? "units" : "shares" }
-    static func unitAbbrev(_ raw: String) -> String { isFund(raw) ? "units" : "sh" }
+    static func isMetal(_ raw: String) -> Bool {
+        raw.uppercased().replacingOccurrences(of: " ", with: "") == preciousMetal
+    }
+
+    /// "ounces" for metals, "units" for mutual funds, "shares" otherwise.
+    static func unitNoun(_ raw: String) -> String {
+        if isMetal(raw) { return "ounces" }
+        return isFund(raw) ? "units" : "shares"
+    }
+    static func unitAbbrev(_ raw: String) -> String {
+        if isMetal(raw) { return "oz" }
+        return isFund(raw) ? "units" : "sh"
+    }
 }
 
 enum MarketError: LocalizedError {
@@ -77,6 +92,9 @@ protocol MarketDataProvider {
     func quote(_ symbol: String) async throws -> Quote
     func search(_ query: String) async throws -> [SymbolMatch]
     func fxRate(from: String, to: String) async throws -> Double
+    /// All rates for `base` (base → code), in one call. The robust source for
+    /// converting every account and holding into the user's currency.
+    func fxRates(base: String) async throws -> [String: Double]
 }
 
 struct YahooMarketDataProvider: MarketDataProvider {
@@ -118,8 +136,23 @@ struct YahooMarketDataProvider: MarketDataProvider {
         }
     }
 
+    func fxRates(base: String) async throws -> [String: Double] {
+        // open.er-api.com: keyless, one call returns every currency for `base`.
+        let url = "https://open.er-api.com/v6/latest/\(base.uppercased())"
+        let response: ERApiResponse = try await get(url)
+        guard response.result == "success", !response.rates.isEmpty else {
+            throw MarketError.noData
+        }
+        return response.rates
+    }
+
     func fxRate(from: String, to: String) async throws -> Double {
         if from == to { return 1 }
+        // Prefer the bulk table; it's the same source the whole app converts with.
+        if let rates = try? await fxRates(base: to), let units = rates[from], units > 0 {
+            return 1 / units
+        }
+        // Fallback: Yahoo's per-pair FX symbol (e.g. INRUSD=X).
         let quote = try await quote("\(from)\(to)=X")
         return quote.price
     }
@@ -168,6 +201,11 @@ struct YahooMarketDataProvider: MarketDataProvider {
         }
         let quotes: [Item]
     }
+
+    private struct ERApiResponse: Decodable {
+        let result: String
+        let rates: [String: Double]
+    }
 }
 
 // MARK: - Refresh service
@@ -180,16 +218,22 @@ final class MarketService {
     var lastError: String?
     var lastUpdated: Date?
 
-    /// Fetch fresh prices + FX for every holding, update the cached values, then
-    /// roll the total into the market-linked Net Worth account.
+    /// Refresh exchange rates, every holding's price, and every account's
+    /// converted value, then roll investments into the Net Worth account.
     func refresh(holdings: [Holding], displayCurrency: String, in context: ModelContext) async {
+        isRefreshing = true
+        lastError = nil
+        defer { isRefreshing = false }
+
+        // 0. One FX call covers every currency the app needs — accounts *and*
+        //    holdings convert from the same shared, persisted table.
+        await MarketService.refreshRates(base: displayCurrency, provider: provider)
+        refreshAccountFX(displayCurrency: displayCurrency, in: context)
+
         guard !holdings.isEmpty else {
             Investments.rebuild(holdings: holdings, in: context)
             return
         }
-        isRefreshing = true
-        lastError = nil
-        defer { isRefreshing = false }
 
         // 1. Prices — a few at a time: fast for big portfolios while staying
         //    gentle on the public API.
@@ -207,15 +251,7 @@ final class MarketService {
             }
         }
 
-        // 2. FX rates for each currency we actually need.
-        var fx: [String: Double] = [:]
-        for currency in Set(quotes.values.map(\.currency)) where currency != displayCurrency {
-            if let rate = try? await provider.fxRate(from: currency, to: displayCurrency) {
-                fx[currency] = rate
-            }
-        }
-
-        // 3. Apply to holdings.
+        // 2. Apply prices, converting each holding's currency with the shared table.
         for holding in holdings {
             guard let quote = quotes[holding.symbol] else { continue }
             holding.cachedPrice = quote.price
@@ -223,8 +259,15 @@ final class MarketService {
             if let prev = quote.previousClose, prev > 0 {
                 holding.cachedChangePercent = (quote.price - prev) / prev
             }
-            if let name = quote.name, !name.isEmpty { holding.companyName = name }
-            let rate = quote.currency == displayCurrency ? 1 : (fx[quote.currency] ?? holding.cachedFXRate)
+            // Keep curated names for metals — the futures quote name is the
+            // contract month (e.g. "Gold Aug 26"), not a useful label.
+            if let name = quote.name, !name.isEmpty, !InstrumentType.isMetal(holding.assetType) {
+                holding.companyName = name
+            }
+            // Prefer the shared rate; fall back to last known (never blindly 1
+            // for a foreign currency).
+            let rate = FXRates.rateToBase(quote.currency, base: displayCurrency)
+                ?? (quote.currency == displayCurrency ? 1 : holding.cachedFXRate)
             holding.cachedFXRate = rate
             holding.cachedValueInBase = holding.shares * quote.price * rate
             holding.lastUpdated = .now
@@ -236,6 +279,37 @@ final class MarketService {
             lastError = "Couldn't reach the market just now. Showing last known values."
         } else {
             lastUpdated = .now
+        }
+    }
+
+    /// Fetch and persist the full rate table for `base`. Shared so the add form
+    /// can warm the cache before saving a foreign account.
+    @discardableResult
+    static func refreshRates(base: String, provider: MarketDataProvider) async -> Bool {
+        guard let rates = try? await provider.fxRates(base: base), !rates.isEmpty else {
+            return false
+        }
+        FXRates.update(base: base, rates: rates)
+        return true
+    }
+
+    /// Snap each manual account's cached rate to the shared table. Base-currency
+    /// accounts pin to 1; foreign ones with no known rate keep their last value.
+    private func refreshAccountFX(displayCurrency: String, in context: ModelContext) {
+        let accounts = ((try? context.fetch(FetchDescriptor<Account>())) ?? [])
+            .filter { !$0.isMarketLinked }
+        for account in accounts {
+            let code = account.currencyCode
+            if code.isEmpty || code == displayCurrency {
+                account.cachedFXRate = 1
+                account.cachedFXBase = displayCurrency
+            } else if let rate = FXRates.rateToBase(code, base: displayCurrency) {
+                account.cachedFXRate = rate
+                account.cachedFXBase = displayCurrency
+            }
+            // A foreign account with no known rate keeps its old cache; because
+            // its `cachedFXBase` no longer matches the (possibly changed) base,
+            // `baseBalance` treats it as pending instead of converting wrongly.
         }
     }
 }
@@ -258,7 +332,10 @@ enum Investments {
     static func rebuild(holdings: [Holding], in context: ModelContext) {
         let total = holdings.reduce(0) { $0 + $1.cachedValueInBase }
         if let account = linkedAccount(in: context) {
-            account.balance = total
+            // No holdings left → remove the auto-account rather than leaving a
+            // stray $0 "Investments" entry lingering in the store.
+            if holdings.isEmpty { context.delete(account) }
+            else { account.balance = total }
         } else if !holdings.isEmpty {
             context.insert(Account(name: "Investments", category: .investment,
                                    balance: total, isMarketLinked: true))

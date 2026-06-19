@@ -2,7 +2,10 @@
 //  RootView.swift
 //  PennyPath
 //
-//  The five tabs: Home, Net Worth, Spending, Goals, Coach.
+//  Picks the shell to show. The shipping app is the Spectrum shell — four tabs
+//  (Net Worth, Expenses, Goals, Insights), no Home, with a colour-per-card
+//  net-worth deck. Developer Mode can swap in the experimental reskins
+//  (including Ember, the previous default) or the legacy five-tab `classicTabs`.
 //
 
 import SwiftUI
@@ -14,7 +17,7 @@ enum AppTab: Hashable {
 
 /// Which experimental Home shows while Developer Mode is on.
 enum DevHomeStyle: String, CaseIterable {
-    case premium, sophisticated, rings, verde, verdeLite, garden, sage
+    case premium, sophisticated, rings, verde, verdeLite, garden, sage, aurora, clarity, vivid, strata, summit, prism, ember, onyx, slate, midnight, mono, spectrum
 }
 
 /// App appearance preference.
@@ -45,6 +48,8 @@ struct RootView: View {
     @AppStorage("devHomeStyle") private var devHomeStyle = DevHomeStyle.premium.rawValue
     // Fires when the "Add Expense" shortcut (e.g. Back Tap) runs.
     @State private var quickAdd = QuickAddCoordinator.shared
+    // The reset notice is informational — once read it can go away.
+    @State private var dismissedResetNotice = false
 
     var body: some View {
         @Bindable var quickAdd = quickAdd
@@ -52,12 +57,76 @@ struct RootView: View {
             if developerMode, DevHomeStyle(rawValue: devHomeStyle) == .sage {
                 // The Sage reskin replaces the whole shell: four tabs, no Home.
                 SageRootView()
+            } else if developerMode, DevHomeStyle(rawValue: devHomeStyle) == .aurora {
+                // The Aurora reskin replaces the shell too — and brings its
+                // own onboarding tour on first visit.
+                AuroraRootView()
+            } else if developerMode, DevHomeStyle(rawValue: devHomeStyle) == .clarity {
+                // The Clarity reskin: a decluttered shell with its own intro.
+                ClarityRootView()
+            } else if developerMode, DevHomeStyle(rawValue: devHomeStyle) == .vivid {
+                // The Vivid reskin: a bold, vibrant shell — violet brand, hero
+                // numbers, a center add button — with its own intro.
+                VividRootView()
+            } else if developerMode, DevHomeStyle(rawValue: devHomeStyle) == .strata {
+                // The Strata reskin: an asset-first, Percento-style net-worth
+                // tracker — periwinkle canvas, net worth as proportional layers.
+                StrataRootView()
+            } else if developerMode, DevHomeStyle(rawValue: devHomeStyle) == .summit {
+                // The Summit reskin: a calm, premium, milestone-driven shell —
+                // warm paper canvas, serif titles, four tabs (Net Worth,
+                // Expenses, Goals, AI Insights) and a climb to gold milestones.
+                SummitRootView()
+            } else if developerMode, DevHomeStyle(rawValue: devHomeStyle) == .prism {
+                // The Prism reskin: a flat neutral canvas where every money
+                // kind is a muted, hue-coded gradient box — four tabs (Net
+                // Worth, Spending, Goals, Insights), its own intro.
+                PrismRootView()
+            } else if developerMode, DevHomeStyle(rawValue: devHomeStyle) == .ember {
+                // The Ember reskin: a bronze espresso→champagne gradient with
+                // the net worth as a fanned stack of cream→espresso cards.
+                EmberRootView()
+            } else if developerMode, DevHomeStyle(rawValue: devHomeStyle) == .onyx {
+                // The Onyx reskin: an espresso→black gradient with a warm glow
+                // and the net worth as floating warm liquid-glass cards.
+                OnyxRootView()
+            } else if developerMode, DevHomeStyle(rawValue: devHomeStyle) == .slate {
+                // The Slate reskin: the Ember stacked-card layout in a charcoal
+                // gradient palette.
+                SlateRootView()
+            } else if developerMode, DevHomeStyle(rawValue: devHomeStyle) == .midnight {
+                // The Midnight reskin: the Ember stacked-card layout in a
+                // midnight-blue gradient palette.
+                MidnightRootView()
+            } else if developerMode, DevHomeStyle(rawValue: devHomeStyle) == .mono {
+                // The Mono reskin: a strict black & white version of the main
+                // Ember app — every screen in a pure grayscale palette.
+                MonoRootView()
+            } else if developerMode, DevHomeStyle(rawValue: devHomeStyle) == .spectrum {
+                // The Spectrum reskin: the Mono/Ember stacked layout where every
+                // net-worth card wears its own distinct jewel-tone colour.
+                SpectrumRootView()
+            } else if !developerMode {
+                // The shipping app: the Spectrum shell — four tabs (Net Worth,
+                // Expenses, Goals, Insights), no Home — on the real store. Each
+                // net-worth card wears its own jewel-tone colour. (Ember, the
+                // previous shipping shell, is still reachable under Developer
+                // Mode → Home style → Ember.)
+                SpectrumRootView()
             } else {
+                // Developer Mode with one of the experimental Home styles.
                 classicTabs
             }
         }
         .safeAreaInset(edge: .top, spacing: 0) {
-            if store.isFallbackStore { storageWarning }
+            switch store.storeHealth {
+            case .healthy:
+                EmptyView()
+            case .inMemoryFallback:
+                storageWarning
+            case .resetAfterFailure:
+                if !dismissedResetNotice { resetNotice }
+            }
         }
         .sheet(isPresented: $quickAdd.showAddExpense) {
             // Quick-added expenses must not silently land in the throwaway
@@ -71,12 +140,14 @@ struct RootView: View {
         .onAppear { PennyPathShortcuts.updateAppShortcutParameters() }
     }
 
-    /// Shown when the on-disk database couldn't be opened: the app still works,
-    /// but nothing entered now will survive a relaunch.
+    /// Shown when even a fresh on-disk database couldn't be created (e.g. the
+    /// device is out of space): the app still works, but nothing entered now
+    /// will survive a relaunch.
     private var storageWarning: some View {
         HStack(spacing: Theme.Space.sm) {
             Image(systemName: "exclamationmark.triangle.fill")
-            Text("Storage problem — changes won't be saved. Try relaunching, or free up space.")
+                .accessibilityHidden(true)
+            Text("Storage problem — changes won't be saved. Free up space, then relaunch.")
                 .font(.caption.weight(.semibold))
                 .multilineTextAlignment(.leading)
             Spacer(minLength: 0)
@@ -85,6 +156,30 @@ struct RootView: View {
         .padding(.horizontal, Theme.Space.lg)
         .padding(.vertical, Theme.Space.sm)
         .background(Theme.red)
+    }
+
+    /// Shown once after the saved database couldn't be read and was set aside:
+    /// the app saves normally again, but started from a blank slate.
+    private var resetNotice: some View {
+        HStack(spacing: Theme.Space.sm) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .accessibilityHidden(true)
+            Text("Your saved data couldn't be read, so PennyPath started fresh. The old file was kept on this device.")
+                .font(.caption.weight(.semibold))
+                .multilineTextAlignment(.leading)
+            Spacer(minLength: 0)
+            Button {
+                withAnimation { dismissedResetNotice = true }
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.caption.weight(.bold))
+            }
+            .accessibilityLabel("Dismiss")
+        }
+        .foregroundStyle(.white)
+        .padding(.horizontal, Theme.Space.lg)
+        .padding(.vertical, Theme.Space.sm)
+        .background(Theme.gold)
     }
 
     private var classicTabs: some View {
@@ -98,7 +193,7 @@ struct RootView: View {
                     case .verde: HomeViewVerde(selectedTab: $tab)
                     case .verdeLite: HomeViewVerdeLite(selectedTab: $tab)
                     case .garden: HomeViewGarden(selectedTab: $tab)
-                    case .sage: HomeView(selectedTab: $tab) // handled above; safe fallback
+                    case .sage, .aurora, .clarity, .vivid, .strata, .summit, .prism, .ember, .onyx, .slate, .midnight, .mono, .spectrum: HomeView(selectedTab: $tab) // handled above; safe fallback
                     }
                 } else {
                     HomeView(selectedTab: $tab)

@@ -28,14 +28,18 @@ struct CurrencyOption: Identifiable {
 }
 
 struct CurrencyPickerView: View {
+    static let defaultFooter = "Picking a currency changes how amounts are written, not their value — existing numbers aren't converted."
+
     @Binding var selection: String
+    private let footer: String
     @Environment(\.dismiss) private var dismiss
     @State private var search = ""
 
     private let all: [CurrencyOption]
 
-    init(selection: Binding<String>) {
+    init(selection: Binding<String>, footer: String = CurrencyPickerView.defaultFooter) {
         _selection = selection
+        self.footer = footer
         all = Locale.commonISOCurrencyCodes
             .map(CurrencyOption.init)
             .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
@@ -54,7 +58,7 @@ struct CurrencyPickerView: View {
         List {
             Section {
             } footer: {
-                Text("Picking a currency changes how amounts are written, not their value — existing numbers aren't converted.")
+                Text(footer)
             }
             ForEach(filtered) { option in
                 Button {

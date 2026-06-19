@@ -13,8 +13,7 @@ struct NetWorthView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \Account.balance, order: .reverse) private var accounts: [Account]
     @Query private var holdings: [Holding]
-    @AppStorage(AppSettings.currencyKey) private var currencyCode =
-        Locale.current.currency?.identifier ?? "USD"
+    @AppStorage(AppSettings.currencyKey) private var currencyCode = "USD"
 
     @State private var market = MarketService()
     @State private var showingAdd = false
@@ -28,9 +27,9 @@ struct NetWorthView: View {
     }
     private var debts: [Account] { accounts.filter { !$0.category.isAsset } }
     private var assetTotal: Double {
-        accounts.filter { $0.category.isAsset }.reduce(0) { $0 + $1.balance }
+        accounts.filter { $0.category.isAsset }.reduce(0) { $0 + $1.baseBalance }
     }
-    private var debtTotal: Double { debts.reduce(0) { $0 + $1.balance } }
+    private var debtTotal: Double { debts.reduce(0) { $0 + $1.baseBalance } }
     private var netWorth: Double { assetTotal - debtTotal }
     private var investmentsValue: Double { holdings.reduce(0) { $0 + $1.cachedValueInBase } }
 
@@ -176,7 +175,7 @@ struct NetWorthView: View {
     }
 
     private var updatedText: String {
-        let source = "Prices via Yahoo Finance · may be delayed"
+        let source = "Prices may be delayed"
         if let date = market.lastUpdated {
             return "Updated \(date.formatted(.relative(presentation: .named))) · \(source)"
         }

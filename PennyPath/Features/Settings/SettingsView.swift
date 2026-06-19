@@ -16,8 +16,7 @@ struct SettingsView: View {
     @Environment(AppStore.self) private var store
     @Environment(\.openURL) private var openURL
 
-    @AppStorage(AppSettings.currencyKey) private var currencyCode =
-        Locale.current.currency?.identifier ?? "USD"
+    @AppStorage(AppSettings.currencyKey) private var currencyCode = "USD"
     @AppStorage("appearance") private var appearance = AppAppearance.system.rawValue
     @AppStorage("developerMode") private var developerMode = false
     @AppStorage("devHomeStyle") private var devHomeStyle = DevHomeStyle.premium.rawValue
@@ -125,7 +124,7 @@ struct SettingsView: View {
                 } header: {
                     Text("About")
                 } footer: {
-                    Text("Your money coach runs entirely on this device — your balances, spending, and goals never leave your phone. The only network use is fetching public prices for investment symbols you add.")
+                    Text("Your money coach runs entirely on this device — your balances, spending, and goals never leave your phone. The only network use is fetching public market prices and exchange rates for the investments and currencies you add, and looking up an app's name and icon when you type a subscription.")
                 }
 
                 Section {
@@ -149,6 +148,18 @@ struct SettingsView: View {
                             Text("Verde (palette + type)").tag(DevHomeStyle.verdeLite.rawValue)
                             Text("Money Garden 🌱").tag(DevHomeStyle.garden.rawValue)
                             Text("Sage (calm · 4 tabs)").tag(DevHomeStyle.sage.rawValue)
+                            Text("Aurora (cosmic · night)").tag(DevHomeStyle.aurora.rawValue)
+                            Text("Clarity (minimal · complete)").tag(DevHomeStyle.clarity.rawValue)
+                            Text("Vivid (bold · vibrant)").tag(DevHomeStyle.vivid.rawValue)
+                            Text("Strata (Percento · net worth)").tag(DevHomeStyle.strata.rawValue)
+                        Text("Summit (premium · milestones)").tag(DevHomeStyle.summit.rawValue)
+                        Text("Prism (hue-coded · gradient)").tag(DevHomeStyle.prism.rawValue)
+                        Text("Ember (bronze · stacked cards)").tag(DevHomeStyle.ember.rawValue)
+                        Text("Onyx (espresso · liquid glass)").tag(DevHomeStyle.onyx.rawValue)
+                        Text("Slate (charcoal · stacked)").tag(DevHomeStyle.slate.rawValue)
+                        Text("Midnight (blue · stacked)").tag(DevHomeStyle.midnight.rawValue)
+                        Text("Mono (black & white · stacked)").tag(DevHomeStyle.mono.rawValue)
+                        Text("Spectrum (colour-per-card · stacked)").tag(DevHomeStyle.spectrum.rawValue)
                         }
                         Button {
                             replayOnboarding()
@@ -167,9 +178,7 @@ struct SettingsView: View {
                     }
 
                     Section("Diagnostics") {
-                        LabeledContent("Active store", value: store.isDemo
-                            ? "Demo · in-memory"
-                            : (store.isFallbackStore ? "⚠️ Fallback · in-memory" : "Real · on disk"))
+                        LabeledContent("Active store", value: storeStatus)
                         LabeledContent("Accounts", value: "\(accounts.count)")
                         LabeledContent("Expenses", value: "\(expenses.count)")
                         LabeledContent("Goals", value: "\(goals.count)")
@@ -218,6 +227,15 @@ struct SettingsView: View {
             } message: {
                 Text("Developer tools are now available below.")
             }
+        }
+    }
+
+    private var storeStatus: String {
+        if store.isDemo { return "Demo · in-memory" }
+        switch store.storeHealth {
+        case .healthy: return "Real · on disk"
+        case .resetAfterFailure: return "⚠️ Reset · fresh on disk"
+        case .inMemoryFallback: return "⚠️ Fallback · in-memory"
         }
     }
 

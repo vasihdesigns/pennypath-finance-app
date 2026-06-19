@@ -60,4 +60,41 @@ final class InsightsEngineTests: XCTestCase {
         let b = InsightsEngine.dailyWisdom(now: .now)
         XCTAssertEqual(a.title, b.title)
     }
+
+    func testHeadlineSurfacesTheMostUrgentThing() {
+        // Over budget (urgent) coexists with a spending-is-down win; the headline
+        // must be the urgent one, not whichever fired first.
+        let now = Date.now
+        let thisMonth = Expense(amount: 150, category: .food, date: now)
+        let lastMonth = Expense(amount: 300, category: .food, date: now.adding(months: -1))
+        let budget = CategoryBudget(category: .food, monthlyLimit: 100)
+        let head = InsightsEngine.headline(accounts: [], expenses: [thisMonth, lastMonth],
+                                           goals: [], budgets: [budget], now: now)
+        XCTAssertEqual(head.title, "Over your budget")
+        XCTAssertEqual(head.tone, .warning)
+    }
+
+    func testSubscriptionDueSoonSurfacesAsAttention() {
+        let now = Date.now
+        let sub = UpcomingPayment(name: "Netflix", amount: 16, category: .fun,
+                                  isSubscription: true, cycleUnit: .month,
+                                  nextDueDate: now.adding(days: 2))
+        let out = InsightsEngine.generate(accounts: [], expenses: [Expense(amount: 100, category: .food, date: now)],
+                                          goals: [], payments: [sub], now: now)
+        let due = out.first { $0.topic == .subscriptions && $0.title.contains("due soon") }
+        XCTAssertNotNil(due)
+        XCTAssertEqual(due?.tone, .warning)
+    }
+
+    func testRisingHistoryProducesTrendInsight() {
+        let now = Date.now
+        let snapshots = [
+            NetWorthSnapshot(date: now.adding(months: -4), value: 1_000),
+            NetWorthSnapshot(date: now, value: 1_500),
+        ]
+        let out = InsightsEngine.generate(
+            accounts: [Account(name: "Cash", category: .cash, balance: 1_500)],
+            expenses: [], goals: [], snapshots: snapshots, now: now)
+        XCTAssertNotNil(out.first { $0.title == "Net worth is trending up" })
+    }
 }

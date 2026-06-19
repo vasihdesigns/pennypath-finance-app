@@ -31,6 +31,15 @@ final class MoneyTests: XCTestCase {
         XCTAssertTrue(signedMoney(5, code: "USD").hasPrefix("+"))
         XCTAssertTrue(signedMoney(-5, code: "USD").hasPrefix("−"))
     }
+
+    func testNonFiniteInputsDegradeToDashInsteadOfTrapping() {
+        // A 0/0 or x/0 ratio must never reach Int(...) and trap the app.
+        XCTAssertEqual(percentText(.nan), "—")
+        XCTAssertEqual(percentText(.infinity), "—")
+        XCTAssertEqual(money(.nan, code: "USD"), "—")
+        XCTAssertEqual(money(.infinity, code: "USD"), "—")
+        XCTAssertEqual(signedMoney(.nan, code: "USD"), "—")
+    }
 }
 
 final class DateHelperTests: XCTestCase {
