@@ -16,7 +16,10 @@ import OSLog
 
 @Observable
 final class AppStore {
-    private static let schema = Schema([Account.self, Expense.self, Goal.self, CategoryBudget.self, NetWorthSnapshot.self, Holding.self, UpcomingPayment.self])
+    // Built from the versioned schema so on-disk stores carry a version stamp
+    // and `PennyPathMigrationPlan` can upgrade them on future releases. See
+    // PennyPathSchema.swift for how to add a version safely.
+    private static let schema = Schema(versionedSchema: PennyPathSchemaV1.self)
     private static let logger = Logger(subsystem: "com.vasih.PennyPath", category: "AppStore")
 
     /// How the active container relates to the user's on-disk data.
@@ -81,7 +84,10 @@ final class AppStore {
     }
 
     private static func openAndSeed(_ config: ModelConfiguration, isDemo: Bool) throws -> ModelContainer {
-        let container = try ModelContainer(for: schema, configurations: [config])
+        // The migration plan upgrades older on-disk stores to the current schema
+        // before the app reads them. Demo runs on a fresh in-memory store, so it
+        // never needs migrating, but passing the plan is harmless either way.
+        let container = try ModelContainer(for: schema, migrationPlan: PennyPathMigrationPlan.self, configurations: [config])
         // Seed through a throwaway context so this stays off the main actor.
         let context = ModelContext(container)
         if isDemo {
