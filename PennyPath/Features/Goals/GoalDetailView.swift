@@ -123,6 +123,7 @@ struct GoalContributeView: View {
 
     @State private var amount: Double = 0
     @State private var isAdding: Bool
+    @FocusState private var amountFocused: Bool
 
     init(goal: Goal, startAdding: Bool = true) {
         _goal = Bindable(goal)
@@ -134,39 +135,80 @@ struct GoalContributeView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: Theme.Space.lg) {
+                VStack(spacing: 16) {
                     Picker("", selection: $isAdding) {
                         Text("Add money").tag(true)
                         Text("Take out").tag(false)
                     }
                     .pickerStyle(.segmented)
 
-                    AmountField(title: isAdding ? "Add to \(goal.name)" : "Take out of \(goal.name)",
-                                amount: $amount, tint: Theme.gold)
-                        .card(padding: Theme.Space.xl)
+                    amountHero
 
                     Text("Saved now: \(money(goal.savedAmount)) of \(money(goal.targetAmount))")
                         .font(.footnote)
-                        .foregroundStyle(Theme.inkTertiary)
+                        .foregroundStyle(Spectrum.onCanvasSoft)
 
                     Text("Goal savings are their own tally — this doesn't move money in or out of your accounts.")
                         .font(.caption)
-                        .foregroundStyle(Theme.inkTertiary)
+                        .foregroundStyle(Spectrum.onCanvasSoft.opacity(0.8))
                         .multilineTextAlignment(.center)
+
+                    saveButton
                 }
-                .padding(Theme.Space.lg)
+                .padding(20)
             }
-            .background(Theme.background)
+            .scrollIndicators(.hidden)
+            .background(Spectrum.canvas.ignoresSafeArea())
             .navigationTitle("Update savings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { apply() }.bold().disabled(!canSave)
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") { amountFocused = false }.bold()
                 }
             }
-            .tint(Theme.gold)
+            .tint(Spectrum.accent)
         }
+    }
+
+    private var amountHero: some View {
+        VStack(spacing: 14) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(AppSettings.currencySymbol)
+                    .font(.system(size: 30, weight: .semibold))
+                    .foregroundStyle(Spectrum.onCanvasSoft)
+                TextField("0", value: $amount, format: .number.precision(.fractionLength(0...2)))
+                    .font(.system(size: 52, weight: .bold))
+                    .foregroundStyle(Spectrum.onCanvas)
+                    .keyboardType(.decimalPad)
+                    .focused($amountFocused)
+                    .fixedSize()
+            }
+            .fixedSize()
+            .frame(maxWidth: .infinity)
+
+            Text(isAdding ? "Add to \(goal.name)" : "Take out of \(goal.name)")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(Spectrum.onCanvasSoft)
+                .multilineTextAlignment(.center)
+        }
+        .padding(.vertical, 26)
+        .frame(maxWidth: .infinity)
+        .spectrumPanel(padding: 0)
+    }
+
+    private var saveButton: some View {
+        Button { apply() } label: {
+            Text(isAdding ? "Add money" : "Take out")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(Spectrum.plusInk)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 15)
+                .background(canSave ? Spectrum.plus : Spectrum.plus.opacity(0.4), in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .disabled(!canSave)
     }
 
     private func apply() {

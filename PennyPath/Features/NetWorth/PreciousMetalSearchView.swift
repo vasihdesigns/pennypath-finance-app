@@ -40,6 +40,7 @@ struct PreciousMetal: Identifiable, Hashable {
 
 struct PreciousMetalSearchView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var scheme
     let service: MarketService
 
     var body: some View {
@@ -48,27 +49,31 @@ struct PreciousMetalSearchView: View {
                 Section {
                     ForEach(PreciousMetal.all) { metal in
                         NavigationLink(value: metal.match) {
-                            HStack(spacing: Theme.Space.md) {
+                            HStack(spacing: 12) {
                                 Image(systemName: "circle.fill")
                                     .font(.title3)
                                     .foregroundStyle(metal.tint)
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(metal.name)
                                         .font(.body.weight(.semibold))
-                                        .foregroundStyle(Theme.ink)
+                                        .foregroundStyle(Spectrum.onCanvas)
                                     Text("\(metal.symbol) · \(metal.venue)")
                                         .font(.caption)
-                                        .foregroundStyle(Theme.inkSecondary)
+                                        .foregroundStyle(Spectrum.onCanvasSoft)
                                 }
                             }
                             .padding(.vertical, 2)
                         }
+                        .listRowBackground(Spectrum.glassFill(dark: scheme == .dark))
                     }
                 } footer: {
                     Text("Live prices, quoted per troy ounce in USD and converted to your currency. Enter how many ounces you hold.")
+                        .foregroundStyle(Spectrum.onCanvasSoft)
                 }
             }
             .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
+            .background(Spectrum.canvas.ignoresSafeArea())
             .navigationTitle("Precious Metals")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -77,7 +82,7 @@ struct PreciousMetalSearchView: View {
             .navigationDestination(for: SymbolMatch.self) { match in
                 HoldingFormView(match: match, showsCancel: false, onComplete: { dismiss() })
             }
-            .tint(Theme.green)
+            .tint(Spectrum.accent)
         }
     }
 }

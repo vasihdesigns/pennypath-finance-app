@@ -11,8 +11,12 @@ import SwiftUI
 import SwiftData
 
 struct SpectrumGoalsView: View {
-    @Query(sort: \Goal.createdAt, order: .forward) private var goals: [Goal]
-    @Query private var accounts: [Account]
+    @Environment(\.modelContext) private var context
+    // Archived goals are hidden from the list, the summary, and insights.
+    @Query(filter: #Predicate<Goal> { !$0.isArchived },
+           sort: \Goal.createdAt, order: .forward) private var goals: [Goal]
+    // Archived accounts don't count toward net worth or milestones.
+    @Query(filter: #Predicate<Account> { !$0.isArchived }) private var accounts: [Account]
     @AppStorage(AppSettings.currencyKey) private var currencyCode = "USD"
 
     @State private var showingAdd = false
@@ -110,7 +114,23 @@ struct SpectrumGoalsView: View {
                     goalCard(goal, color: Spectrum.palette[index % Spectrum.palette.count])
                 }
                 .buttonStyle(.plain)
+                .contextMenu {
+                    Button("Archive", systemImage: "archivebox") { archive(goal) }
+                    Button("Delete", systemImage: "trash", role: .destructive) {
+                        context.delete(goal)
+                    }
+                }
             }
+        }
+    }
+
+    /// Soft-hide a goal — it leaves the list and the saved-so-far summary at once,
+    /// but the record is kept and can be restored from Settings → Archived.
+    private func archive(_ goal: Goal) {
+        Haptics.tap()
+        withAnimation(.snappy) {
+            goal.isArchived = true
+            goal.archivedAt = .now
         }
     }
 

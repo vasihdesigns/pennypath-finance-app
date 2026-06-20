@@ -29,6 +29,8 @@ struct SettingsView: View {
     @Query private var expenses: [Expense]
     @Query private var goals: [Goal]
     @Query private var budgets: [CategoryBudget]
+    @Query(filter: #Predicate<Account> { $0.isArchived }) private var archivedAccounts: [Account]
+    @Query(filter: #Predicate<Goal> { $0.isArchived }) private var archivedGoals: [Goal]
 
     @State private var showResetConfirm = false
     @State private var showClearConfirm = false
@@ -37,6 +39,7 @@ struct SettingsView: View {
     @State private var showDevUnlocked = false
     @State private var exportItem: ExportFile?
     @State private var exportFailed = false
+    @State private var showPaywall = false
 
     private var appVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
@@ -44,11 +47,28 @@ struct SettingsView: View {
     private var buildNumber: String {
         Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
     }
+    private var archivedCount: Int { archivedAccounts.count + archivedGoals.count }
 
     var body: some View {
         @Bindable var store = store
         return NavigationStack {
             Form {
+                Section {
+                    PlusUpsellRow { showPaywall = true }
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                }
+
+                Section {
+                    NavigationLink {
+                        SearchView()
+                    } label: {
+                        Label("Search your items", systemImage: "magnifyingglass")
+                    }
+                } footer: {
+                    Text("Find any account, investment, goal, expense, or upcoming payment you've added.")
+                }
+
                 Section {
                     Toggle(isOn: $demoOn) {
                         Label("Demo Mode", systemImage: "play.circle.fill")
@@ -115,6 +135,17 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    NavigationLink {
+                        ArchivedView()
+                    } label: {
+                        HStack {
+                            Label("Archived", systemImage: "archivebox")
+                            Spacer()
+                            Text(archivedCount == 0 ? "None" : "\(archivedCount)")
+                                .foregroundStyle(Theme.inkSecondary)
+                        }
+                    }
+                    .disabled(store.isDemo)
                     Button {
                         showResetConfirm = true
                     } label: {
@@ -124,7 +155,7 @@ struct SettingsView: View {
                     Button(role: .destructive) {
                         showClearConfirm = true
                     } label: {
-                        Label("Clear everything", systemImage: "trash")
+                        Label("Reset & clear everything", systemImage: "trash")
                     }
                     .disabled(store.isDemo)
                 } header: {
@@ -132,7 +163,7 @@ struct SettingsView: View {
                 } footer: {
                     Text(store.isDemo
                          ? "Turn off Demo Mode to manage your own data."
-                         : "Sample data fills the app with example accounts, spending, and goals so you can explore. Clearing removes everything and starts you fresh.")
+                         : "Archived items are tucked away but kept. Sample data fills the app with examples to explore. Resetting removes everything — including anything archived — and starts you fresh.")
                 }
 
                 Section {
@@ -254,14 +285,15 @@ struct SettingsView: View {
             } message: {
                 Text("This clears your current data and loads examples.")
             }
-            .confirmationDialog("Clear all your data?",
+            .confirmationDialog("Reset and clear all your data?",
                                 isPresented: $showClearConfirm, titleVisibility: .visible) {
-                Button("Clear everything", role: .destructive) {
+                Button("Delete everything", role: .destructive) {
                     SampleData.clear(in: context)
                     dismiss()
                 }
+                Button("Cancel", role: .cancel) {}
             } message: {
-                Text("This can't be undone.")
+                Text("This permanently erases every account, expense, goal, and budget — including anything you've archived. It can't be undone. To hide an account without losing it, archive it instead.")
             }
             .alert("Developer Mode unlocked 🛠️", isPresented: $showDevUnlocked) {
                 Button("Nice", role: .cancel) {}
@@ -270,6 +302,9 @@ struct SettingsView: View {
             }
             .sheet(item: $exportItem) { item in
                 ActivityView(url: item.url)
+            }
+            .sheet(isPresented: $showPaywall) {
+                PaywallView()
             }
             .alert("Couldn't export", isPresented: $exportFailed) {
                 Button("OK", role: .cancel) {}
@@ -327,6 +362,60 @@ struct SettingsView: View {
             UserDefaults.standard.removeObject(forKey: SampleData.seededKey)
             didOnboard = false
         }
+    }
+}
+
+// MARK: - Plus upsell banner
+
+/// The jewel-tone "PennyPath Plus" banner that sits at the top of Settings and
+/// opens the paywall. A gradient card cut from the Spectrum deck palette so it
+/// stands apart from the plain Form rows below it.
+private struct PlusUpsellRow: View {
+    var onTap: () -> Void
+
+    private let jewels: [Color] = SpectrumMoneyKind.allCases.map(\.fill)
+
+    var body: some View {
+        Button {
+            Haptics.tap()
+            onTap()
+        } label: {
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle().fill(.white.opacity(0.18))
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
+                .frame(width: 46, height: 46)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("PennyPath Plus")
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundStyle(.white)
+                    Text("Unlock everything — try it free")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.white.opacity(0.85))
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.85))
+            }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 16)
+            .frame(maxWidth: .infinity)
+            .background(
+                LinearGradient(colors: jewels,
+                               startPoint: .topLeading, endPoint: .bottomTrailing)
+            )
+            .overlay(
+                LinearGradient(colors: [.white.opacity(0.18), .clear],
+                               startPoint: .top, endPoint: .center)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("PennyPath Plus. Unlock everything, try it free.")
     }
 }
 

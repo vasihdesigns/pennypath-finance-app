@@ -3,7 +3,8 @@
 //  PennyPath
 //
 //  Step 1 of adding an investment: pick a market (searchable). Tapping one
-//  pushes the instrument search scoped to that market.
+//  pushes the instrument search scoped to that market. Styled to the Spectrum
+//  brand so the Add Account → investment flow stays on-brand throughout.
 //
 
 import SwiftUI
@@ -20,22 +21,25 @@ struct MarketListView: View {
         List {
             ForEach(markets) { market in
                 NavigationLink(value: market) {
-                    HStack(spacing: Theme.Space.md) {
+                    HStack(spacing: 12) {
                         Text(market.flag).font(.title2)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(market.name)
                                 .font(.body.weight(.semibold))
-                                .foregroundStyle(Theme.ink)
+                                .foregroundStyle(Spectrum.onCanvas)
                             Text(market.subtitle)
                                 .font(.caption)
-                                .foregroundStyle(Theme.inkSecondary)
+                                .foregroundStyle(Spectrum.onCanvasSoft)
                         }
                     }
                     .padding(.vertical, 2)
                 }
+                .listRowBackground(Color.clear)
             }
         }
         .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .background(Spectrum.canvas.ignoresSafeArea())
         .navigationTitle("Choose a market")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -48,6 +52,6 @@ struct MarketListView: View {
                 ContentUnavailableView.search(text: query)
             }
         }
-        .tint(Theme.green)
+        .tint(Spectrum.accent)
     }
 }

@@ -3,13 +3,15 @@
 //  PennyPath
 //
 //  Step 2: search instruments within the chosen market. Results are filtered to
-//  that market; picking one pushes the shares form.
+//  that market; picking one pushes the shares form. Styled to the Spectrum brand
+//  so the Add Account → investment flow stays on-brand throughout.
 //
 
 import SwiftUI
 
 struct InstrumentSearchView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var scheme
     let market: Market
     let service: MarketService
     /// Shown when this is the root of its own flow (e.g. the fund search), so the
@@ -28,8 +30,9 @@ struct InstrumentSearchView: View {
                 Section {
                     Text(promptText)
                         .font(.footnote)
-                        .foregroundStyle(Theme.inkSecondary)
+                        .foregroundStyle(Spectrum.onCanvasSoft)
                 }
+                .listRowBackground(Color.clear)
             } else {
                 ForEach(results) { match in
                     NavigationLink(value: match) {
@@ -37,31 +40,34 @@ struct InstrumentSearchView: View {
                             HStack(spacing: 8) {
                                 Text(match.symbol)
                                     .font(.body.weight(.semibold))
-                                    .foregroundStyle(Theme.ink)
+                                    .foregroundStyle(Spectrum.onCanvas)
                                 let typeLabel = InstrumentType.friendly(match.type)
                                 if !typeLabel.isEmpty {
                                     Text(typeLabel)
                                         .font(.caption2.weight(.semibold))
-                                        .foregroundStyle(Theme.inkSecondary)
+                                        .foregroundStyle(Spectrum.onCanvasSoft)
                                         .padding(.vertical, 2).padding(.horizontal, 6)
-                                        .background(Theme.well, in: Capsule())
+                                        .background(Spectrum.glassFill(dark: scheme == .dark), in: Capsule())
                                 }
                             }
                             Text(match.name)
                                 .font(.caption)
-                                .foregroundStyle(Theme.inkSecondary)
+                                .foregroundStyle(Spectrum.onCanvasSoft)
                                 .lineLimit(1)
                             if !match.exchange.isEmpty {
                                 Text(match.exchange)
                                     .font(.caption2)
-                                    .foregroundStyle(Theme.inkTertiary)
+                                    .foregroundStyle(Spectrum.onCanvasSoft.opacity(0.7))
                             }
                         }
                     }
+                    .listRowBackground(Color.clear)
                 }
             }
         }
         .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .background(Spectrum.canvas.ignoresSafeArea())
         .navigationTitle(market.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -79,7 +85,7 @@ struct InstrumentSearchView: View {
             }
         }
         .task(id: query) { await runSearch() }
-        .tint(Theme.green)
+        .tint(Spectrum.accent)
     }
 
     private var searchPrompt: String {

@@ -54,28 +54,8 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		1A0000000000000000000006 /* PennyPath */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
-			explicitFileTypes = {
-			};
-			explicitFolders = (
-			);
-			path = PennyPath;
-			sourceTree = "<group>";
-		};
-		1A0000000000000000000011 /* PennyPathTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
-			explicitFileTypes = {
-			};
-			explicitFolders = (
-			);
-			path = PennyPathTests;
-			sourceTree = "<group>";
-		};
+		1A0000000000000000000006 /* PennyPath */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = PennyPath; sourceTree = "<group>"; };
+		1A0000000000000000000011 /* PennyPathTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = PennyPathTests; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -147,7 +127,6 @@
 				7C658D2CFEE333A264DD2AE5 /* PennyPathWidgetBundle.swift */,
 				4D079A49B9025693352B30DB /* QuickAddIntent.swift */,
 			);
-			name = PennyPathWidgets;
 			path = PennyPathWidgets;
 			sourceTree = "<group>";
 		};

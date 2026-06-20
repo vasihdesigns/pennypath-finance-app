@@ -15,9 +15,10 @@ struct SpectrumInsightsView: View {
     /// Lets an insight send the user to the screen it's about.
     var selectTab: (SpectrumTab) -> Void
 
-    @Query private var accounts: [Account]
+    // Archived accounts are hidden everywhere, so they shouldn't drive insights.
+    @Query(filter: #Predicate<Account> { !$0.isArchived }) private var accounts: [Account]
     @Query(sort: \Expense.date, order: .reverse) private var expenses: [Expense]
-    @Query private var goals: [Goal]
+    @Query(filter: #Predicate<Goal> { !$0.isArchived }) private var goals: [Goal]
     @Query private var budgets: [CategoryBudget]
     @Query private var upcomingPayments: [UpcomingPayment]
     @Query(sort: \NetWorthSnapshot.date, order: .forward) private var snapshots: [NetWorthSnapshot]

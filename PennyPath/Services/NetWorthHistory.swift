@@ -14,7 +14,10 @@ enum NetWorthHistory {
     /// Save (or update) today's net-worth point from current account balances.
     /// No-op while there are no accounts yet.
     static func record(in context: ModelContext) {
-        let accounts = (try? context.fetch(FetchDescriptor<Account>())) ?? []
+        // Mirror the screen: archived accounts are hidden, so they must not move
+        // the recorded net-worth point either.
+        let descriptor = FetchDescriptor<Account>(predicate: #Predicate { !$0.isArchived })
+        let accounts = (try? context.fetch(descriptor)) ?? []
         guard !accounts.isEmpty else { return }
         let net = accounts.reduce(0) { $0 + $1.signedBalance }
 

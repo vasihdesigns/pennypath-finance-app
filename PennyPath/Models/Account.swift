@@ -103,6 +103,15 @@ final class Account {
     /// Payment due / money-back / payoff date, depending on the kind.
     var dueDate: Date? = nil
 
+    // Archiving — a soft hide. Archived accounts drop out of net worth, the deck,
+    // insights, and history, but the record is kept so it can be restored later
+    // (or deleted for good) from Settings → Archived. Defaulted so the additive
+    // field migrates in lightweight, and older accounts read as "not archived".
+    var isArchived: Bool = false
+    /// When the account was archived (nil while active). Used to sort the
+    /// Archived list newest-first.
+    var archivedAt: Date? = nil
+
     init(name: String, category: AccountCategory, balance: Double,
          createdAt: Date = .now, isMarketLinked: Bool = false,
          currencyCode: String = "", cachedFXRate: Double = 1, cachedFXBase: String = "",

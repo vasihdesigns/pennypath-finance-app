@@ -59,39 +59,45 @@ struct CurrencyPickerView: View {
             Section {
             } footer: {
                 Text(footer)
+                    .foregroundStyle(Spectrum.onCanvasSoft)
             }
+            .listRowBackground(Color.clear)
             ForEach(filtered) { option in
                 Button {
                     selection = option.code
                     dismiss()
                 } label: {
-                    HStack(spacing: Theme.Space.md) {
+                    HStack(spacing: 12) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(option.code)
                                 .font(.body.weight(.semibold))
-                                .foregroundStyle(Theme.ink)
+                                .foregroundStyle(Spectrum.onCanvas)
                             Text(option.name)
                                 .font(.caption)
-                                .foregroundStyle(Theme.inkSecondary)
+                                .foregroundStyle(Spectrum.onCanvasSoft)
                         }
                         Spacer()
                         if let symbol = option.symbol {
                             Text(symbol)
                                 .font(.body)
-                                .foregroundStyle(Theme.inkSecondary)
+                                .foregroundStyle(Spectrum.onCanvasSoft)
                         }
                         if option.code == selection {
                             Image(systemName: "checkmark")
                                 .font(.body.weight(.semibold))
-                                .foregroundStyle(Theme.green)
+                                .foregroundStyle(Spectrum.accent)
                         }
                     }
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .listRowBackground(Color.clear)
             }
         }
         .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .background(Spectrum.canvas.ignoresSafeArea())
+        .tint(Spectrum.accent)
         .searchable(text: $search, prompt: "Search currencies")
         .autocorrectionDisabled()
         .navigationTitle("Currency")

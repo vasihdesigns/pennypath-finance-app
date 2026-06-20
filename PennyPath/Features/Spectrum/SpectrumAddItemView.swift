@@ -15,6 +15,10 @@
 //  an existing item keeps its original kind (a subscription can flip to a future
 //  payment, but an expense stays an expense) so nothing is silently re-modelled.
 //
+//  Styled to the Spectrum brand (flat canvas, smoked-glass panels, an amount
+//  hero and a capsule CTA) so it matches the Add Account flow — not the stock
+//  grouped Form it grew out of.
+//
 
 import SwiftUI
 import SwiftData
@@ -22,6 +26,7 @@ import SwiftData
 struct SpectrumAddItemView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var scheme
 
     // Edit targets — at most one is non-nil. nil/nil = a fresh add.
     var expense: Expense? = nil
@@ -45,6 +50,7 @@ struct SpectrumAddItemView: View {
     @State private var note = ""
     @State private var iconURL = ""
     @State private var suggestions: [AppSuggestion] = []
+    @FocusState private var amountFocused: Bool
     @FocusState private var nameFocused: Bool
 
     private var editingExpense: Bool { expense != nil }
@@ -92,75 +98,33 @@ struct SpectrumAddItemView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section {
-                    HStack {
-                        Text(AppSettings.currencySymbol).foregroundStyle(.secondary)
-                        TextField("Amount", value: $amount, format: .number.precision(.fractionLength(0...2)))
-                            .keyboardType(.decimalPad)
-                            .font(.title3.weight(.semibold))
-                    }
-                    TextField(outcome == .expense ? "Name (optional)" : "Name", text: $name)
-                        .textInputAutocapitalization(.words)
-                        .focused($nameFocused)
-                    if outcome != .expense && nameFocused && !suggestions.isEmpty {
-                        suggestionsRow
-                    }
-                }
-
-                Section {
-                    Picker("Category", selection: $category) {
-                        ForEach(ExpenseCategory.allCases) { c in
-                            Text("\(c.emoji)  \(c.title)").tag(c)
-                        }
-                    }
-                }
-
-                Section {
-                    Toggle("Repeats", isOn: $repeats.animation(.snappy))
-                    if repeats {
-                        Toggle("Auto-renew", isOn: $autoRenew)
-                        Picker("Repeats every", selection: $cycleUnit) {
-                            ForEach(CycleUnit.allCases) { Text($0.title).tag($0) }
-                        }
-                        .pickerStyle(.segmented)
-                        Stepper(value: $cycleInterval, in: 1...365) {
-                            Text("Every \(cycleInterval) \(cycleUnit.title.lowercased())\(cycleInterval == 1 ? "" : "s")")
-                        }
-                    }
-                } footer: {
+            ScrollView {
+                VStack(spacing: 16) {
+                    amountHero
+                    namePanel
+                    categoryPanel
+                    repeatsPanel
                     Text(outcomeCaption)
+                        .font(.system(size: 13))
+                        .foregroundStyle(Spectrum.onCanvasSoft)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 4)
+                    datePanel
+                    if outcome != .expense { notePanel }
+                    if isEditing { deleteButton }
+                    saveButton
                 }
-
-                Section {
-                    DatePicker(dateLabel, selection: $date, displayedComponents: .date)
-                    if outcome == .futurePayment {
-                        Toggle("Remind me", isOn: $remindMe)
-                    }
-                }
-
-                if outcome != .expense {
-                    Section("Note") {
-                        TextField("Add a note", text: $note, axis: .vertical)
-                            .lineLimit(1...4)
-                    }
-                }
-
-                if isEditing {
-                    Section {
-                        Button(editingExpense ? "Delete expense" : "Delete", role: .destructive) {
-                            deleteItem()
-                        }
-                        .frame(maxWidth: .infinity)
-                    }
-                }
+                .padding(20)
             }
+            .scrollIndicators(.hidden)
+            .background(Spectrum.canvas.ignoresSafeArea())
             .navigationTitle(navTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { save() }.bold().disabled(!canSave)
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") { amountFocused = false; nameFocused = false }.bold()
                 }
             }
             .tint(Spectrum.accent)
@@ -175,7 +139,48 @@ struct SpectrumAddItemView: View {
         return "Add"
     }
 
-    // MARK: App suggestions (for naming a subscription)
+    // MARK: Amount hero — big, in the app's base currency
+
+    private var amountHero: some View {
+        VStack(spacing: 14) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(AppSettings.currencySymbol)
+                    .font(.system(size: 30, weight: .semibold))
+                    .foregroundStyle(Spectrum.onCanvasSoft)
+                TextField("0", value: $amount, format: .number.precision(.fractionLength(0...2)))
+                    .font(.system(size: 52, weight: .bold))
+                    .foregroundStyle(Spectrum.onCanvas)
+                    .keyboardType(.decimalPad)
+                    .focused($amountFocused)
+                    .fixedSize()
+            }
+            .fixedSize()
+            .frame(maxWidth: .infinity)
+
+            Text("Amount")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(Spectrum.onCanvasSoft)
+        }
+        .padding(.vertical, 26)
+        .frame(maxWidth: .infinity)
+        .spectrumPanel(padding: 0)
+    }
+
+    // MARK: Name (+ app suggestions for naming a subscription)
+
+    private var namePanel: some View {
+        labeled("Name") {
+            VStack(alignment: .leading, spacing: 10) {
+                TextField(outcome == .expense ? "Optional" : "Name", text: $name)
+                    .textInputAutocapitalization(.words)
+                    .foregroundStyle(Spectrum.onCanvas)
+                    .focused($nameFocused)
+                if outcome != .expense && nameFocused && !suggestions.isEmpty {
+                    suggestionsRow
+                }
+            }
+        }
+    }
 
     private var suggestionsRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -186,7 +191,7 @@ struct SpectrumAddItemView: View {
                             AppIconView(url: suggestion.iconURL, size: 52)
                             Text(suggestion.name)
                                 .font(.caption2)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Spectrum.onCanvasSoft)
                                 .lineLimit(1)
                                 .frame(width: 58)
                         }
@@ -194,9 +199,151 @@ struct SpectrumAddItemView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.vertical, 6)
+            .padding(.vertical, 4)
         }
-        .listRowInsets(EdgeInsets(top: 4, leading: 14, bottom: 4, trailing: 0))
+    }
+
+    // MARK: Category — a scroll of jewel-tone chips (selected wears its colour)
+
+    private var categoryPanel: some View {
+        labeled("Category") {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(ExpenseCategory.allCases) { c in
+                        categoryChip(c)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
+    }
+
+    private func categoryChip(_ c: ExpenseCategory) -> some View {
+        let selected = category == c
+        let color = Spectrum.categoryColor(c)
+        return Button {
+            Haptics.tap()
+            withAnimation(.snappy) { category = c }
+        } label: {
+            HStack(spacing: 6) {
+                Text(c.emoji).font(.system(size: 14))
+                Text(c.title).font(.system(size: 14, weight: .semibold))
+            }
+            .foregroundStyle(selected ? Color.white : Spectrum.onCanvas)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 9)
+            .background(selected ? color : Spectrum.glassFill(dark: scheme == .dark), in: Capsule())
+            .overlay(
+                Capsule().strokeBorder(selected ? .clear : Spectrum.glassStroke(dark: scheme == .dark), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: Repeats (+ subscription cadence)
+
+    private var repeatsPanel: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Toggle(isOn: $repeats.animation(.snappy)) {
+                Text("Repeats")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(Spectrum.onCanvas)
+            }
+            .tint(Spectrum.accent)
+
+            if repeats {
+                Divider().overlay(Spectrum.glassStroke(dark: scheme == .dark))
+                Toggle(isOn: $autoRenew) {
+                    Text("Auto-renew")
+                        .font(.system(size: 16))
+                        .foregroundStyle(Spectrum.onCanvas)
+                }
+                .tint(Spectrum.accent)
+                Picker("Repeats every", selection: $cycleUnit) {
+                    ForEach(CycleUnit.allCases) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                Stepper(value: $cycleInterval, in: 1...365) {
+                    Text("Every \(cycleInterval) \(cycleUnit.title.lowercased())\(cycleInterval == 1 ? "" : "s")")
+                        .font(.system(size: 15))
+                        .foregroundStyle(Spectrum.onCanvas)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .spectrumPanel(padding: 0)
+    }
+
+    // MARK: Date (+ reminder for a scheduled future payment)
+
+    private var datePanel: some View {
+        labeled(dateLabel) {
+            VStack(alignment: .leading, spacing: 12) {
+                DatePicker("", selection: $date, displayedComponents: .date)
+                    .labelsHidden()
+                    .tint(Spectrum.accent)
+                if outcome == .futurePayment {
+                    Toggle(isOn: $remindMe) {
+                        Text("Remind me")
+                            .font(.system(size: 16))
+                            .foregroundStyle(Spectrum.onCanvas)
+                    }
+                    .tint(Spectrum.accent)
+                }
+            }
+        }
+    }
+
+    private var notePanel: some View {
+        labeled("Note") {
+            TextField("Add a note", text: $note, axis: .vertical)
+                .lineLimit(1...4)
+                .foregroundStyle(Spectrum.onCanvas)
+        }
+    }
+
+    private var deleteButton: some View {
+        Button(role: .destructive) {
+            deleteItem()
+        } label: {
+            Text(editingExpense ? "Delete expense" : "Delete")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(Spectrum.spend)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 15)
+                .background(Spectrum.spend.opacity(0.12), in: Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var saveButton: some View {
+        Button { save() } label: {
+            Text(isEditing ? "Save changes" : "Add")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(Spectrum.plusInk)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 15)
+                .background(canSave ? Spectrum.plus : Spectrum.plus.opacity(0.4), in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .disabled(!canSave)
+    }
+
+    // MARK: Titled smoked-glass panel (matches the Add Account flow)
+
+    private func labeled<Content: View>(_ title: String,
+                                        @ViewBuilder _ content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title.uppercased())
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Spectrum.onCanvasSoft)
+                .tracking(0.5)
+            content()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .spectrumPanel(padding: 0)
     }
 
     private func select(_ suggestion: AppSuggestion) {
