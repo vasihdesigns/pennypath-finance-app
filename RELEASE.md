@@ -15,6 +15,53 @@ A short, repeatable checklist for shipping a new version to the App Store
    - This requires a paid Apple Developer account. Until it's enabled, the in-app **iCloud Sync** toggle safely falls back to on-device storage, so the app still works.
    - Face ID (`NSFaceIDUsageDescription`) is already set in build settings — no action needed.
 
+## Optional: Control Center / Lock Screen quick-add (iOS 18)
+
+The fastest way to log an expense is an iOS 18 **Control** — but a Control must
+live in a **Widget Extension** target, which this project doesn't have yet.
+Adding it is a structural change best done with Xcode's wizard (it wires the
+`.appex` embedding and signing correctly):
+
+1. **File → New → Target… → Widget Extension.** Name it `PennyPathWidgets`,
+   bundle id `com.vasih.PennyPath.PennyPathWidgets`, **uncheck** "Include Live
+   Activity", **check** "Include Control" if offered. Activate the scheme if asked.
+2. In the new target's settings, set the deployment target to iOS 18 (Controls
+   are 18+). The rest of the app stays at iOS 17.
+3. Share the intent with the extension: select
+   [`PennyPath/App/QuickAddIntent.swift`](PennyPath/App/QuickAddIntent.swift) in
+   Xcode and, in the File Inspector → **Target Membership**, also tick
+   `PennyPathWidgets`. (For a cleaner split, move `PennyPathShortcuts` into its
+   own app-only file first so only `AddExpenseIntent` + `QuickAddCoordinator` are
+   shared.)
+4. Replace the generated control source with:
+
+   ```swift
+   import WidgetKit
+   import SwiftUI
+   import AppIntents
+
+   @main
+   struct PennyPathWidgetBundle: WidgetBundle {
+       var body: some Widget { AddExpenseControl() }
+   }
+
+   struct AddExpenseControl: ControlWidget {
+       var body: some ControlWidgetConfiguration {
+           StaticControlConfiguration(kind: "com.vasih.PennyPath.addExpense") {
+               ControlWidgetButton(action: AddExpenseIntent()) {
+                   Label("Add Expense", systemImage: "creditcard.fill")
+               }
+           }
+           .displayName("Add Expense")
+           .description("Log a new expense in PennyPath.")
+       }
+   }
+   ```
+
+`AddExpenseIntent` already sets `openAppWhenRun = true`, so tapping the control
+opens PennyPath straight to the Add Expense sheet — same path as Back Tap, but
+the control is far easier for users to add (long-press Control Center → ＋).
+
 ## Versioning
 
 Two numbers, set in the target's build settings (`PennyPath.xcodeproj`):
