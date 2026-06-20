@@ -103,12 +103,15 @@ struct SettingsView: View {
                     Button {
                         openURL(URL(string: UIApplication.openSettingsURLString)!)
                     } label: {
-                        Label("Open iOS Settings (for Back Tap)", systemImage: "gearshape.fill")
+                        Label("Open the Settings app", systemImage: "gearshape.fill")
                     }
                 } header: {
                     Text("Quick add shortcut")
                 } footer: {
-                    Text("The “Add Expense” shortcut is already built in — nothing to set up. Tap **Add to Siri** above and just say it, or use the Shortcuts button to drop it on your Home Screen.\n\nTo fire it by tapping the back of your iPhone, iOS requires you to switch it on yourself (no app is allowed to change this): Settings → Accessibility → Touch → Back Tap → Double Tap → **Add Expense**.")
+                    // Back Tap can't be set by an app and has no direct link, so be
+                    // honest about it: the button just opens the Settings app, and
+                    // the steps below get the user the rest of the way.
+                    Text("The **Add Expense** shortcut is already built in — pick how to trigger it:\n\n•  **Say it:** tap *Add to Siri* above, then ask Siri.\n•  **Home Screen:** tap *Shortcuts* to add it as a tappable icon.\n•  **Back Tap:** double-tap the back of your iPhone. iOS won't let an app turn this on (and there's no link straight to it), so open the Settings app and go to **Accessibility → Touch → Back Tap → Double Tap → Add Expense**.")
                 }
 
                 Section {

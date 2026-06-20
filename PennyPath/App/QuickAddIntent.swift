@@ -8,7 +8,9 @@
 //  the iPhone jumps straight to logging an expense.
 //
 //  iOS doesn't let an app set Back Tap itself; we just publish the shortcut and
-//  guide the user to assign it (see SettingsView → "Back Tap quick add").
+//  guide the user to assign it (see SettingsView → "Quick add shortcut"). The
+//  same AddExpenseIntent can also drive a Control Center / Lock Screen control
+//  once a Widget Extension target is added (see RELEASE.md).
 //
 
 import AppIntents
