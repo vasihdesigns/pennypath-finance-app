@@ -19,7 +19,6 @@ struct SettingsView: View {
     @AppStorage(AppSettings.currencyKey) private var currencyCode = "USD"
     @AppStorage("appearance") private var appearance = AppAppearance.system.rawValue
     @AppStorage("developerMode") private var developerMode = false
-    @AppStorage("devHomeStyle") private var devHomeStyle = DevHomeStyle.premium.rawValue
     // Same default as PennyPathApp — the two must never disagree.
     @AppStorage("didCompleteOnboarding") private var didOnboard = false
 
@@ -140,15 +139,6 @@ struct SettingsView: View {
 
                 if developerMode {
                     Section {
-                        Picker("Home style", selection: $devHomeStyle) {
-                            Text("Premium (bold)").tag(DevHomeStyle.premium.rawValue)
-                            Text("Sophisticated").tag(DevHomeStyle.sophisticated.rawValue)
-                            Text("Activity Rings").tag(DevHomeStyle.rings.rawValue)
-                            Text("Verde (full reskin)").tag(DevHomeStyle.verde.rawValue)
-                            Text("Verde (palette + type)").tag(DevHomeStyle.verdeLite.rawValue)
-                            Text("Money Garden 🌱").tag(DevHomeStyle.garden.rawValue)
-                            Text("Spectrum (colour-per-card · stacked)").tag(DevHomeStyle.spectrum.rawValue)
-                        }
                         Button {
                             replayOnboarding()
                         } label: {

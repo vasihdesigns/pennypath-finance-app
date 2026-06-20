@@ -2,23 +2,13 @@
 //  RootView.swift
 //  PennyPath
 //
-//  Picks the shell to show. The shipping app is the Spectrum shell — four tabs
-//  (Net Worth, Expenses, Goals, Insights), no Home, with a colour-per-card
-//  net-worth deck. Developer Mode can swap in the legacy five-tab `classicTabs`
-//  with its experimental Home styles.
+//  Hosts the app shell: the Spectrum shell — four tabs (Net Worth, Expenses,
+//  Goals, Insights), no Home, with a colour-per-card net-worth deck — plus the
+//  storage-health banners and the quick-add sheet.
 //
 
 import SwiftUI
 import SwiftData
-
-enum AppTab: Hashable {
-    case home, netWorth, expenses, goals, coach
-}
-
-/// Which experimental Home shows while Developer Mode is on.
-enum DevHomeStyle: String, CaseIterable {
-    case premium, sophisticated, rings, verde, verdeLite, garden, spectrum
-}
 
 /// App appearance preference.
 enum AppAppearance: String, CaseIterable, Identifiable {
@@ -41,11 +31,7 @@ enum AppAppearance: String, CaseIterable, Identifiable {
 }
 
 struct RootView: View {
-    @State private var tab: AppTab = .home
     @Environment(AppStore.self) private var store
-    // Developer Mode swaps in the experimental "premium" Home. Off = the real app.
-    @AppStorage("developerMode") private var developerMode = false
-    @AppStorage("devHomeStyle") private var devHomeStyle = DevHomeStyle.premium.rawValue
     // Fires when the "Add Expense" shortcut (e.g. Back Tap) runs.
     @State private var quickAdd = QuickAddCoordinator.shared
     // The reset notice is informational — once read it can go away.
@@ -53,17 +39,9 @@ struct RootView: View {
 
     var body: some View {
         @Bindable var quickAdd = quickAdd
-        return Group {
-            if !developerMode || DevHomeStyle(rawValue: devHomeStyle) == .spectrum {
-                // The shipping app: the Spectrum shell — four tabs (Net Worth,
-                // Expenses, Goals, Insights), no Home. Each net-worth card wears
-                // its own jewel-tone colour.
-                SpectrumRootView()
-            } else {
-                // Developer Mode with one of the experimental Home styles.
-                classicTabs
-            }
-        }
+        // The shipping app: the Spectrum shell — four tabs (Net Worth, Expenses,
+        // Goals, Insights), no Home. Each net-worth card wears its own colour.
+        return SpectrumRootView()
         .safeAreaInset(edge: .top, spacing: 0) {
             switch store.storeHealth {
             case .healthy:
@@ -126,45 +104,6 @@ struct RootView: View {
         .padding(.horizontal, Theme.Space.lg)
         .padding(.vertical, Theme.Space.sm)
         .background(Theme.gold)
-    }
-
-    private var classicTabs: some View {
-        TabView(selection: $tab) {
-            NavigationStack {
-                if developerMode {
-                    switch DevHomeStyle(rawValue: devHomeStyle) ?? .premium {
-                    case .premium: HomeViewPremium(selectedTab: $tab)
-                    case .sophisticated: HomeViewSophisticated(selectedTab: $tab)
-                    case .rings: HomeViewRings(selectedTab: $tab)
-                    case .verde: HomeViewVerde(selectedTab: $tab)
-                    case .verdeLite: HomeViewVerdeLite(selectedTab: $tab)
-                    case .garden: HomeViewGarden(selectedTab: $tab)
-                    case .spectrum: HomeView(selectedTab: $tab) // handled above; safe fallback
-                    }
-                } else {
-                    HomeView(selectedTab: $tab)
-                }
-            }
-            .tabItem { Label("Home", systemImage: "house.fill") }
-            .tag(AppTab.home)
-
-            NavigationStack { NetWorthView() }
-                .tabItem { Label("Net Worth", systemImage: "chart.line.uptrend.xyaxis") }
-                .tag(AppTab.netWorth)
-
-            NavigationStack { ExpensesView() }
-                .tabItem { Label("Spending", systemImage: "creditcard.fill") }
-                .tag(AppTab.expenses)
-
-            NavigationStack { GoalsView() }
-                .tabItem { Label("Goals", systemImage: "target") }
-                .tag(AppTab.goals)
-
-            NavigationStack { CoachView() }
-                .tabItem { Label("Coach", systemImage: "sparkles") }
-                .tag(AppTab.coach)
-        }
-        .tint(Theme.ink)
     }
 }
 
