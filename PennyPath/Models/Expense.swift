@@ -49,10 +49,11 @@ enum ExpenseCategory: String, CaseIterable, Codable, Identifiable, Pickable {
 
 @Model
 final class Expense {
-    var amount: Double
-    var categoryRaw: String
-    var note: String
-    var date: Date
+    // Defaults keep the schema CloudKit-ready; `init` overwrites them.
+    var amount: Double = 0
+    var categoryRaw: String = ExpenseCategory.other.rawValue
+    var note: String = ""
+    var date: Date = Date.now
 
     init(amount: Double, category: ExpenseCategory, note: String = "", date: Date = .now) {
         self.amount = abs(amount)

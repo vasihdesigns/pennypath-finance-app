@@ -44,36 +44,65 @@ final class AppStore {
     /// True when nothing entered now will survive a relaunch.
     var isFallbackStore: Bool { storeHealth == .inMemoryFallback }
 
+    /// User-defaults key for the iCloud Sync toggle, shared with Settings.
+    static let iCloudSyncKey = "iCloudSyncEnabled"
+
+    /// Whether the real on-disk store mirrors to the user's private iCloud
+    /// (CloudKit). Flipping it rebuilds the container onto / off of CloudKit.
+    /// Off by default until the iCloud capability is provisioned in Xcode.
+    var iCloudSyncEnabled: Bool = UserDefaults.standard.bool(forKey: AppStore.iCloudSyncKey) {
+        didSet {
+            guard oldValue != iCloudSyncEnabled else { return }
+            UserDefaults.standard.set(iCloudSyncEnabled, forKey: Self.iCloudSyncKey)
+            if !isDemo {
+                (container, storeHealth) = Self.makeContainer(isDemo: false, useCloudKit: iCloudSyncEnabled)
+            }
+        }
+    }
+
     /// Flip this to swap the whole app between real data and the demo world.
     var isDemo: Bool = false {
         didSet {
             guard oldValue != isDemo else { return }
-            (container, storeHealth) = Self.makeContainer(isDemo: isDemo)
+            // Demo always runs local/in-memory; real data honours the iCloud setting.
+            (container, storeHealth) = Self.makeContainer(isDemo: isDemo,
+                                                          useCloudKit: !isDemo && iCloudSyncEnabled)
         }
     }
 
     init() {
-        (container, storeHealth) = Self.makeContainer(isDemo: false)
+        let useCloudKit = UserDefaults.standard.bool(forKey: AppStore.iCloudSyncKey)
+        (container, storeHealth) = Self.makeContainer(isDemo: false, useCloudKit: useCloudKit)
     }
 
     /// `storeURL` exists so tests can point the on-disk store at a temp file;
-    /// the app always passes nil and uses the default location.
-    static func makeContainer(isDemo: Bool, storeURL: URL? = nil) -> (ModelContainer, StoreHealth) {
-        let config: ModelConfiguration = if let storeURL, !isDemo {
-            ModelConfiguration(schema: schema, url: storeURL)
-        } else {
-            ModelConfiguration(schema: schema, isStoredInMemoryOnly: isDemo)
+    /// the app always passes nil and uses the default location. `useCloudKit`
+    /// mirrors the real store to the user's private CloudKit database.
+    static func makeContainer(isDemo: Bool, useCloudKit: Bool = false, storeURL: URL? = nil) -> (ModelContainer, StoreHealth) {
+        func config(cloudKit: Bool) -> ModelConfiguration {
+            if isDemo { return ModelConfiguration(schema: schema, isStoredInMemoryOnly: true) }
+            if let storeURL { return ModelConfiguration(schema: schema, url: storeURL) }
+            return ModelConfiguration(schema: schema, cloudKitDatabase: cloudKit ? .automatic : .none)
         }
+        let wantsCloud = useCloudKit && !isDemo && storeURL == nil
         do {
-            return (try openAndSeed(config, isDemo: isDemo), .healthy)
+            return (try openAndSeed(config(cloudKit: wantsCloud), isDemo: isDemo), .healthy)
         } catch {
             logger.error("Store failed to open: \(error, privacy: .public)")
+            // If iCloud was requested but unavailable (e.g. not provisioned, or
+            // signed out of iCloud), fall back to a plain local store rather than
+            // alarming the user — their data still saves on device.
+            if wantsCloud, let local = try? openAndSeed(config(cloudKit: false), isDemo: false) {
+                logger.notice("iCloud unavailable — using local store.")
+                return (local, .healthy)
+            }
             // A real store that won't open is usually a corrupt or
             // incompatible file. Set it aside (kept on device) and start a
             // fresh persistent store, rather than dooming every change to an
             // in-memory fallback on this and all future launches.
-            if !isDemo, setAsideUnreadableStore(at: config.url),
-               let fresh = try? openAndSeed(config, isDemo: false) {
+            let localConfig = config(cloudKit: false)
+            if !isDemo, setAsideUnreadableStore(at: localConfig.url),
+               let fresh = try? openAndSeed(localConfig, isDemo: false) {
                 return (fresh, .resetAfterFailure)
             }
             // Last resort: an empty in-memory store so the app still launches.

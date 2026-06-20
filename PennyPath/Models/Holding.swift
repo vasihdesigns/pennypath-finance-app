@@ -12,19 +12,20 @@ import SwiftData
 
 @Model
 final class Holding {
-    var symbol: String           // e.g. "AAPL", "BMW.DE", "RELIANCE.NS"
-    var companyName: String
-    var shares: Double
-    var assetType: String        // raw Yahoo quoteType, e.g. "EQUITY", "MUTUALFUND"
+    // Defaults keep the schema CloudKit-ready; `init` overwrites them.
+    var symbol: String = ""      // e.g. "AAPL", "BMW.DE", "RELIANCE.NS"
+    var companyName: String = ""
+    var shares: Double = 0
+    var assetType: String = ""   // raw Yahoo quoteType, e.g. "EQUITY", "MUTUALFUND"
 
     // Cached market data so values survive offline and between refreshes.
-    var quoteCurrency: String    // currency the price is quoted in, e.g. "USD"
-    var cachedPrice: Double      // last known price in quoteCurrency
-    var cachedChangePercent: Double  // today's move, as a fraction
-    var cachedFXRate: Double     // quoteCurrency -> app currency at last refresh
-    var cachedValueInBase: Double    // shares * price * fx, in the app's currency
+    var quoteCurrency: String = "USD"  // currency the price is quoted in
+    var cachedPrice: Double = 0  // last known price in quoteCurrency
+    var cachedChangePercent: Double = 0  // today's move, as a fraction
+    var cachedFXRate: Double = 1 // quoteCurrency -> app currency at last refresh
+    var cachedValueInBase: Double = 0  // shares * price * fx, in the app's currency
     var lastUpdated: Date?
-    var createdAt: Date
+    var createdAt: Date = Date.now
 
     init(symbol: String,
          companyName: String = "",

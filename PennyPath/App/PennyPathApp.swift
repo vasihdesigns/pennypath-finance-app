@@ -12,6 +12,7 @@ import SwiftData
 @main
 struct PennyPathApp: App {
     @State private var store = AppStore()
+    @State private var lock = AppLockManager.shared
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("didCompleteOnboarding") private var didOnboard = false
     @AppStorage("appearance") private var appearance = AppAppearance.system.rawValue
@@ -31,14 +32,32 @@ struct PennyPathApp: App {
                         .transition(.opacity)
                         .zIndex(1)
                 }
+
+                // The lock screen sits above everything (even onboarding) so no
+                // content is visible until the owner authenticates.
+                if lock.isLocked {
+                    AppLockView()
+                        .transition(.opacity)
+                        .zIndex(2)
+                }
             }
             .animation(.easeInOut(duration: 0.4), value: didOnboard)
+            .animation(.easeInOut(duration: 0.2), value: lock.isLocked)
             .preferredColorScheme((AppAppearance(rawValue: appearance) ?? .system).colorScheme)
-            // One daily net-worth point, recorded no matter which tab the
-            // user lives in (views also record when balances change).
             .onChange(of: scenePhase) { _, phase in
-                if phase == .active {
+                switch phase {
+                case .active:
+                    // One daily net-worth point, recorded no matter which tab
+                    // the user lives in (views also record when balances change).
                     NetWorthHistory.record(in: store.container.mainContext)
+                    // Returning to the app behind the lock screen re-prompts.
+                    if lock.isLocked { Task { await lock.authenticate() } }
+                case .background, .inactive:
+                    // Hide contents the instant we leave the foreground, so
+                    // balances don't show in the app switcher.
+                    lock.lockForBackground()
+                @unknown default:
+                    break
                 }
             }
         }

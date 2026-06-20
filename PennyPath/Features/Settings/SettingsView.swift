@@ -9,16 +9,19 @@ import SwiftUI
 import SwiftData
 import UIKit
 import AppIntents
+import StoreKit
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
     @Environment(AppStore.self) private var store
     @Environment(\.openURL) private var openURL
+    @Environment(\.requestReview) private var requestReview
 
     @AppStorage(AppSettings.currencyKey) private var currencyCode = "USD"
     @AppStorage("appearance") private var appearance = AppAppearance.system.rawValue
     @AppStorage("developerMode") private var developerMode = false
+    @AppStorage(AppLockManager.enabledKey) private var appLockEnabled = false
     // Same default as PennyPathApp — the two must never disagree.
     @AppStorage("didCompleteOnboarding") private var didOnboard = false
 
@@ -32,6 +35,8 @@ struct SettingsView: View {
     @State private var demoOn = false
     @State private var versionTaps = 0
     @State private var showDevUnlocked = false
+    @State private var exportItem: ExportFile?
+    @State private var exportFailed = false
 
     private var appVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
@@ -41,7 +46,8 @@ struct SettingsView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        @Bindable var store = store
+        return NavigationStack {
             Form {
                 Section {
                     Toggle(isOn: $demoOn) {
@@ -61,6 +67,17 @@ struct SettingsView: View {
                         }
                     }
                     .pickerStyle(.segmented)
+                }
+
+                Section {
+                    Toggle(isOn: $appLockEnabled) {
+                        Label("Require Face ID / Touch ID", systemImage: "faceid")
+                    }
+                    .tint(Theme.ink)
+                } header: {
+                    Text("Privacy & Security")
+                } footer: {
+                    Text("Locks PennyPath so your balances stay hidden in the app switcher and open only with Face ID, Touch ID, or your passcode.")
                 }
 
                 Section {
@@ -113,6 +130,49 @@ struct SettingsView: View {
                     Text(store.isDemo
                          ? "Turn off Demo Mode to manage your own data."
                          : "Sample data fills the app with example accounts, spending, and goals so you can explore. Clearing removes everything and starts you fresh.")
+                }
+
+                Section {
+                    Toggle(isOn: $store.iCloudSyncEnabled) {
+                        Label("iCloud Sync", systemImage: "icloud")
+                    }
+                    .tint(Theme.ink)
+                    .disabled(store.isDemo)
+                    Button {
+                        exportData()
+                    } label: {
+                        Label("Export data (.json)", systemImage: "square.and.arrow.up")
+                    }
+                    .disabled(store.isDemo)
+                } header: {
+                    Text("Backup & sync")
+                } footer: {
+                    Text(store.isDemo
+                         ? "Turn off Demo Mode to back up your own data."
+                         : "iCloud Sync keeps a private copy of your data in your iCloud and in sync across your devices. Export saves a JSON copy you can keep or move anywhere.")
+                }
+
+                Section {
+                    Link(destination: SupportLinks.privacyPolicy) {
+                        Label("Privacy Policy", systemImage: "hand.raised")
+                    }
+                    Link(destination: SupportLinks.terms) {
+                        Label("Terms of Use", systemImage: "doc.text")
+                    }
+                    Button {
+                        if let url = SupportLinks.supportMailURL(appVersion: appVersion, build: buildNumber) {
+                            openURL(url)
+                        }
+                    } label: {
+                        Label("Contact Support", systemImage: "envelope")
+                    }
+                    Button {
+                        requestReview()
+                    } label: {
+                        Label("Rate PennyPath", systemImage: "star")
+                    }
+                } header: {
+                    Text("Help & legal")
                 }
 
                 Section {
@@ -205,6 +265,28 @@ struct SettingsView: View {
             } message: {
                 Text("Developer tools are now available below.")
             }
+            .sheet(item: $exportItem) { item in
+                ActivityView(url: item.url)
+            }
+            .alert("Couldn't export", isPresented: $exportFailed) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("Something went wrong preparing your data file. Please try again.")
+            }
+            .onChange(of: appLockEnabled) { _, enabled in
+                // Disabling reveals the app immediately; enabling takes effect
+                // the next time PennyPath leaves the foreground.
+                if !enabled { AppLockManager.shared.isEnabled = false }
+            }
+        }
+    }
+
+    private func exportData() {
+        do {
+            let url = try DataExport.writeTemporaryFile(from: context)
+            exportItem = ExportFile(url: url)
+        } catch {
+            exportFailed = true
         }
     }
 
@@ -243,4 +325,23 @@ struct SettingsView: View {
             didOnboard = false
         }
     }
+}
+
+// MARK: - Data export sharing
+
+/// A shareable export file, wrapped so `.sheet(item:)` can present the system
+/// share sheet once the JSON has been written.
+struct ExportFile: Identifiable {
+    let id = UUID()
+    let url: URL
+}
+
+/// Bridges `UIActivityViewController` (the system share sheet) into SwiftUI so
+/// the exported backup can be saved to Files, AirDropped, or sent anywhere.
+struct ActivityView: UIViewControllerRepresentable {
+    let url: URL
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: [url], applicationActivities: nil)
+    }
+    func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
 }

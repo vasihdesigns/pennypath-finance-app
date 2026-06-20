@@ -63,12 +63,15 @@ enum AccountCategory: String, CaseIterable, Codable, Identifiable, Pickable {
 
 @Model
 final class Account {
-    var name: String
-    var categoryRaw: String
+    // Non-optional fields carry default values so the schema is CloudKit-ready
+    // (CloudKit requires every attribute to be optional or have a default). The
+    // initializer always overwrites them with real values.
+    var name: String = ""
+    var categoryRaw: String = AccountCategory.cash.rawValue
     /// Always stored as a positive magnitude, in `currencyCode`. The category
     /// decides the sign.
-    var balance: Double
-    var createdAt: Date
+    var balance: Double = 0
+    var createdAt: Date = Date.now
     /// True for the auto-managed account whose balance mirrors live investments.
     var isMarketLinked: Bool = false
 

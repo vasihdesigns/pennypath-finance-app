@@ -10,12 +10,13 @@ import SwiftData
 
 @Model
 final class Goal {
-    var name: String
-    var emoji: String
-    var targetAmount: Double
-    var savedAmount: Double
+    // Defaults keep the schema CloudKit-ready; `init` overwrites them.
+    var name: String = ""
+    var emoji: String = "⭐️"
+    var targetAmount: Double = 0
+    var savedAmount: Double = 0
     var targetDate: Date?
-    var createdAt: Date
+    var createdAt: Date = Date.now
 
     init(
         name: String,

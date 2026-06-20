@@ -11,8 +11,9 @@ import SwiftData
 
 @Model
 final class CategoryBudget {
-    var categoryRaw: String
-    var monthlyLimit: Double
+    // Defaults keep the schema CloudKit-ready; `init` overwrites them.
+    var categoryRaw: String = ExpenseCategory.other.rawValue
+    var monthlyLimit: Double = 0
 
     init(category: ExpenseCategory, monthlyLimit: Double) {
         self.categoryRaw = category.rawValue

@@ -7,6 +7,14 @@ A short, repeatable checklist for shipping a new version to the App Store
 - **Min iOS:** 17.0
 - **Scheme:** `PennyPath`
 
+## One-time setup (do once, before the first submission)
+
+1. **Fill in the real links.** Edit [`PennyPath/Features/Settings/SupportLinks.swift`](PennyPath/Features/Settings/SupportLinks.swift) — replace the placeholder `privacyPolicy`, `terms`, `supportEmail`, and `appStoreID` with your real values. The privacy-policy link is **required** by App Store Guideline 5.1.1 and must also be entered in App Store Connect.
+2. **Enable iCloud (for iCloud Sync).** The code and an entitlements file are in place, but the CloudKit container must be registered against your Apple Developer account:
+   - In Xcode → target **PennyPath** → **Signing & Capabilities** → **+ Capability** → **iCloud** → tick **CloudKit** → confirm the container `iCloud.com.vasih.PennyPath`.
+   - This requires a paid Apple Developer account. Until it's enabled, the in-app **iCloud Sync** toggle safely falls back to on-device storage, so the app still works.
+   - Face ID (`NSFaceIDUsageDescription`) is already set in build settings — no action needed.
+
 ## Versioning
 
 Two numbers, set in the target's build settings (`PennyPath.xcodeproj`):
