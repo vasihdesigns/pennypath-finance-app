@@ -10,12 +10,12 @@ import SwiftData
 
 enum ExpenseCategory: String, CaseIterable, Codable, Identifiable, Pickable {
     case food
-    case transport
     case shopping
-    case fun
-    case bills
+    case transport
+    case rent
     case health
-    case home
+    case subscriptions
+    case fun
     case other
 
     var id: String { rawValue }
@@ -23,12 +23,12 @@ enum ExpenseCategory: String, CaseIterable, Codable, Identifiable, Pickable {
     var title: String {
         switch self {
         case .food: return "Food"
-        case .transport: return "Transport"
         case .shopping: return "Shopping"
-        case .fun: return "Fun"
-        case .bills: return "Bills"
+        case .transport: return "Transport"
+        case .rent: return "Rent"
         case .health: return "Health"
-        case .home: return "Home"
+        case .subscriptions: return "Subscriptions"
+        case .fun: return "Fun"
         case .other: return "Other"
         }
     }
@@ -36,12 +36,12 @@ enum ExpenseCategory: String, CaseIterable, Codable, Identifiable, Pickable {
     var emoji: String {
         switch self {
         case .food: return "🍔"
-        case .transport: return "🚗"
         case .shopping: return "🛍️"
-        case .fun: return "🎮"
-        case .bills: return "📲"
+        case .transport: return "🚗"
+        case .rent: return "🏠"
         case .health: return "💊"
-        case .home: return "🛋️"
+        case .subscriptions: return "🔁"
+        case .fun: return "🎮"
         case .other: return "✨"
         }
     }
@@ -49,10 +49,11 @@ enum ExpenseCategory: String, CaseIterable, Codable, Identifiable, Pickable {
 
 @Model
 final class Expense {
-    var amount: Double
-    var categoryRaw: String
-    var note: String
-    var date: Date
+    // Defaults keep the schema CloudKit-ready; `init` overwrites them.
+    var amount: Double = 0
+    var categoryRaw: String = ExpenseCategory.other.rawValue
+    var note: String = ""
+    var date: Date = Date.now
 
     init(amount: Double, category: ExpenseCategory, note: String = "", date: Date = .now) {
         self.amount = abs(amount)

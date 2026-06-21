@@ -32,58 +32,96 @@ struct HoldingFormView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: Theme.Space.lg) {
+            VStack(spacing: 16) {
                 VStack(spacing: 4) {
                     Text(symbol)
-                        .font(.display(28))
-                        .foregroundStyle(Theme.green)
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundStyle(Spectrum.accent)
                     if !name.isEmpty {
                         Text(name)
                             .font(.subheadline)
-                            .foregroundStyle(Theme.inkSecondary)
+                            .foregroundStyle(Spectrum.onCanvasSoft)
                             .multilineTextAlignment(.center)
                     }
                     if !exchange.isEmpty {
                         Text(exchange)
                             .font(.caption)
-                            .foregroundStyle(Theme.inkTertiary)
+                            .foregroundStyle(Spectrum.onCanvasSoft.opacity(0.7))
                     }
                 }
                 .frame(maxWidth: .infinity)
-                .card(padding: Theme.Space.xl)
+                .padding(.vertical, 26)
+                .spectrumPanel(padding: 0)
 
-                FieldCard(label: "How many \(unitNoun)?") {
+                labeled("How many \(unitNoun)?") {
                     TextField("0", value: $shares, format: .number.precision(.fractionLength(0...4)))
-                        .font(.amount(34))
-                        .foregroundStyle(Theme.ink)
+                        .font(.system(size: 34, weight: .bold))
+                        .foregroundStyle(Spectrum.onCanvas)
                         .keyboardType(.decimalPad)
                         .focused($sharesFocused)
                 }
 
-                if isEditing {
-                    Button("Remove investment", role: .destructive) { remove() }
-                        .buttonStyle(SoftButtonStyle(tint: Theme.red))
-                }
+                if isEditing { removeButton }
+                saveButton
             }
-            .padding(Theme.Space.lg)
+            .padding(20)
         }
-        .background(Theme.background)
+        .scrollIndicators(.hidden)
+        .background(Spectrum.canvas.ignoresSafeArea())
         .navigationTitle(isEditing ? "Edit investment" : "Add investment")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if showsCancel {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { finish() } }
             }
-            ToolbarItem(placement: .confirmationAction) {
-                Button("Save") { save() }.bold().disabled(!canSave)
-            }
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
                 Button("Done") { sharesFocused = false }.bold()
             }
         }
-        .tint(Theme.green)
+        .tint(Spectrum.accent)
         .onAppear { if let holding { shares = holding.shares } }
+    }
+
+    private var removeButton: some View {
+        Button(role: .destructive) { remove() } label: {
+            Text("Remove investment")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(Spectrum.spend)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 15)
+                .background(Spectrum.spend.opacity(0.12), in: Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var saveButton: some View {
+        Button { save() } label: {
+            Text(isEditing ? "Save changes" : "Add investment")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(Spectrum.plusInk)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 15)
+                .background(canSave ? Spectrum.plus : Spectrum.plus.opacity(0.4), in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .disabled(!canSave)
+    }
+
+    // MARK: Titled smoked-glass panel (matches Add Item / Add Account)
+
+    private func labeled<Content: View>(_ title: String,
+                                        @ViewBuilder _ content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title.uppercased())
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Spectrum.onCanvasSoft)
+                .tracking(0.5)
+            content()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .spectrumPanel(padding: 0)
     }
 
     private func save() {

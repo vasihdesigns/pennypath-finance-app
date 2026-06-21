@@ -2,20 +2,13 @@
 //  RootView.swift
 //  PennyPath
 //
-//  The five tabs: Home, Net Worth, Spending, Goals, Coach.
+//  Hosts the app shell: the Spectrum shell — four tabs (Net Worth, Expenses,
+//  Goals, Insights), no Home, with a colour-per-card net-worth deck — plus the
+//  storage-health banners and the quick-add sheet.
 //
 
 import SwiftUI
 import SwiftData
-
-enum AppTab: Hashable {
-    case home, netWorth, expenses, goals, coach
-}
-
-/// Which experimental Home shows while Developer Mode is on.
-enum DevHomeStyle: String, CaseIterable {
-    case premium, sophisticated, rings, verde, verdeLite, garden, sage
-}
 
 /// App appearance preference.
 enum AppAppearance: String, CaseIterable, Identifiable {
@@ -38,26 +31,26 @@ enum AppAppearance: String, CaseIterable, Identifiable {
 }
 
 struct RootView: View {
-    @State private var tab: AppTab = .home
     @Environment(AppStore.self) private var store
-    // Developer Mode swaps in the experimental "premium" Home. Off = the real app.
-    @AppStorage("developerMode") private var developerMode = false
-    @AppStorage("devHomeStyle") private var devHomeStyle = DevHomeStyle.premium.rawValue
     // Fires when the "Add Expense" shortcut (e.g. Back Tap) runs.
     @State private var quickAdd = QuickAddCoordinator.shared
+    // The reset notice is informational — once read it can go away.
+    @State private var dismissedResetNotice = false
 
     var body: some View {
         @Bindable var quickAdd = quickAdd
-        return Group {
-            if developerMode, DevHomeStyle(rawValue: devHomeStyle) == .sage {
-                // The Sage reskin replaces the whole shell: four tabs, no Home.
-                SageRootView()
-            } else {
-                classicTabs
-            }
-        }
+        // The shipping app: the Spectrum shell — four tabs (Net Worth, Expenses,
+        // Goals, Insights), no Home. Each net-worth card wears its own colour.
+        return SpectrumRootView()
         .safeAreaInset(edge: .top, spacing: 0) {
-            if store.isFallbackStore { storageWarning }
+            switch store.storeHealth {
+            case .healthy:
+                EmptyView()
+            case .inMemoryFallback:
+                storageWarning
+            case .resetAfterFailure:
+                if !dismissedResetNotice { resetNotice }
+            }
         }
         .sheet(isPresented: $quickAdd.showAddExpense) {
             // Quick-added expenses must not silently land in the throwaway
@@ -71,12 +64,14 @@ struct RootView: View {
         .onAppear { PennyPathShortcuts.updateAppShortcutParameters() }
     }
 
-    /// Shown when the on-disk database couldn't be opened: the app still works,
-    /// but nothing entered now will survive a relaunch.
+    /// Shown when even a fresh on-disk database couldn't be created (e.g. the
+    /// device is out of space): the app still works, but nothing entered now
+    /// will survive a relaunch.
     private var storageWarning: some View {
         HStack(spacing: Theme.Space.sm) {
             Image(systemName: "exclamationmark.triangle.fill")
-            Text("Storage problem — changes won't be saved. Try relaunching, or free up space.")
+                .accessibilityHidden(true)
+            Text("Storage problem — changes won't be saved. Free up space, then relaunch.")
                 .font(.caption.weight(.semibold))
                 .multilineTextAlignment(.leading)
             Spacer(minLength: 0)
@@ -87,43 +82,28 @@ struct RootView: View {
         .background(Theme.red)
     }
 
-    private var classicTabs: some View {
-        TabView(selection: $tab) {
-            NavigationStack {
-                if developerMode {
-                    switch DevHomeStyle(rawValue: devHomeStyle) ?? .premium {
-                    case .premium: HomeViewPremium(selectedTab: $tab)
-                    case .sophisticated: HomeViewSophisticated(selectedTab: $tab)
-                    case .rings: HomeViewRings(selectedTab: $tab)
-                    case .verde: HomeViewVerde(selectedTab: $tab)
-                    case .verdeLite: HomeViewVerdeLite(selectedTab: $tab)
-                    case .garden: HomeViewGarden(selectedTab: $tab)
-                    case .sage: HomeView(selectedTab: $tab) // handled above; safe fallback
-                    }
-                } else {
-                    HomeView(selectedTab: $tab)
-                }
+    /// Shown once after the saved database couldn't be read and was set aside:
+    /// the app saves normally again, but started from a blank slate.
+    private var resetNotice: some View {
+        HStack(spacing: Theme.Space.sm) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .accessibilityHidden(true)
+            Text("Your saved data couldn't be read, so PennyPath started fresh. The old file was kept on this device.")
+                .font(.caption.weight(.semibold))
+                .multilineTextAlignment(.leading)
+            Spacer(minLength: 0)
+            Button {
+                withAnimation { dismissedResetNotice = true }
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.caption.weight(.bold))
             }
-            .tabItem { Label("Home", systemImage: "house.fill") }
-            .tag(AppTab.home)
-
-            NavigationStack { NetWorthView() }
-                .tabItem { Label("Net Worth", systemImage: "chart.line.uptrend.xyaxis") }
-                .tag(AppTab.netWorth)
-
-            NavigationStack { ExpensesView() }
-                .tabItem { Label("Spending", systemImage: "creditcard.fill") }
-                .tag(AppTab.expenses)
-
-            NavigationStack { GoalsView() }
-                .tabItem { Label("Goals", systemImage: "target") }
-                .tag(AppTab.goals)
-
-            NavigationStack { CoachView() }
-                .tabItem { Label("Coach", systemImage: "sparkles") }
-                .tag(AppTab.coach)
+            .accessibilityLabel("Dismiss")
         }
-        .tint(Theme.ink)
+        .foregroundStyle(.white)
+        .padding(.horizontal, Theme.Space.lg)
+        .padding(.vertical, Theme.Space.sm)
+        .background(Theme.gold)
     }
 }
 

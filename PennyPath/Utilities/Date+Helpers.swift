@@ -21,6 +21,10 @@ extension Date {
         Calendar.current.isDate(self, inSameDayAs: other)
     }
 
+    func isSameYear(as other: Date) -> Bool {
+        Calendar.current.isDate(self, equalTo: other, toGranularity: .year)
+    }
+
     func adding(months: Int) -> Date {
         Calendar.current.date(byAdding: .month, value: months, to: self) ?? self
     }

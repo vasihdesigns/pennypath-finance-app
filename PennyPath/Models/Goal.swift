@@ -10,12 +10,21 @@ import SwiftData
 
 @Model
 final class Goal {
-    var name: String
-    var emoji: String
-    var targetAmount: Double
-    var savedAmount: Double
+    // Defaults keep the schema CloudKit-ready; `init` overwrites them.
+    var name: String = ""
+    var emoji: String = "⭐️"
+    var targetAmount: Double = 0
+    var savedAmount: Double = 0
     var targetDate: Date?
-    var createdAt: Date
+    var createdAt: Date = Date.now
+
+    // Archiving — a soft hide, mirroring Account. Archived goals drop out of the
+    // Goals list, the saved-so-far summary, and insights, but the record is kept
+    // so it can be restored (or deleted) from Settings → Archived. Defaulted so
+    // the additive field migrates in lightweight.
+    var isArchived: Bool = false
+    /// When the goal was archived (nil while active). Sorts the Archived list.
+    var archivedAt: Date? = nil
 
     init(
         name: String,

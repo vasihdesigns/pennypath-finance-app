@@ -17,6 +17,8 @@ struct Market: Identifiable, Hashable {
     let keywords: [String]    // lowercased, matched against a result's exchange label
     let suffixes: [String]    // e.g. [".NS", ".BO"], matched against the symbol
     var isAll: Bool = false
+    var allowedTypes: Set<String>? = nil   // if set, only these quoteTypes are kept (e.g. ETF, MUTUALFUND)
+    var searchHint: String? = nil          // overrides the instrument-search helper text
 
     var subtitle: String {
         if isAll { return "Search across every exchange" }
@@ -26,6 +28,10 @@ struct Market: Identifiable, Hashable {
 
     /// Does a search result belong to this market?
     func accepts(_ match: SymbolMatch) -> Bool {
+        if let allowedTypes {
+            let type = match.type.uppercased().replacingOccurrences(of: " ", with: "")
+            if !allowedTypes.contains(type) { return false }
+        }
         if isAll { return true }
         let exchange = match.exchange.lowercased()
         if keywords.contains(where: { !$0.isEmpty && exchange.contains($0) }) { return true }
@@ -114,6 +120,14 @@ enum Markets {
         Market(id: "crypto", name: "Crypto", region: "Bitcoin, Ethereum & more", flag: "🪙",
                keywords: ["ccc", "cryptocurrency", "crypto"], suffixes: ["-USD"])
     ]
+
+    /// Entry point for the "Investment Fund" flow: a global instrument search
+    /// scoped to mutual funds and ETFs, so equities and crypto don't clutter it.
+    static let funds = Market(
+        id: "funds", name: "Funds & ETFs", region: "Mutual funds & ETFs worldwide", flag: "🧺",
+        keywords: [], suffixes: [], isAll: true,
+        allowedTypes: ["MUTUALFUND", "ETF"],
+        searchHint: "Search any mutual fund or ETF worldwide — try “Vanguard”, “VFIAX”, or “VWRA.L”.")
 
     static func search(_ query: String) -> [Market] {
         let q = query.trimmingCharacters(in: .whitespaces).lowercased()

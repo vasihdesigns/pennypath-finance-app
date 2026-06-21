@@ -31,6 +31,28 @@ final class MoneyTests: XCTestCase {
         XCTAssertTrue(signedMoney(5, code: "USD").hasPrefix("+"))
         XCTAssertTrue(signedMoney(-5, code: "USD").hasPrefix("−"))
     }
+
+    func testNonFiniteInputsDegradeToDashInsteadOfTrapping() {
+        // A 0/0 or x/0 ratio must never reach Int(...) and trap the app.
+        XCTAssertEqual(percentText(.nan), "—")
+        XCTAssertEqual(percentText(.infinity), "—")
+        XCTAssertEqual(money(.nan, code: "USD"), "—")
+        XCTAssertEqual(money(.infinity, code: "USD"), "—")
+        XCTAssertEqual(signedMoney(.nan, code: "USD"), "—")
+    }
+
+    func testMoneyFormatsAcrossCurrencies() {
+        // A zero-decimal currency shows no cents on a whole amount.
+        XCTAssertFalse(money(1_200, code: "JPY").contains(".00"))
+        // A standard currency keeps its cents when fractional.
+        XCTAssertTrue(money(12.5, code: "EUR").contains("50"))
+        // Every code — including 3-decimal (KWD) and exotic ones — formats to a
+        // non-empty string and stays trap-safe on non-finite input.
+        for code in ["USD", "EUR", "JPY", "INR", "GBP", "KWD", "CHF", "BRL", "ZAR", "NGN"] {
+            XCTAssertFalse(money(1_234.5, code: code).isEmpty, "\(code) should format")
+            XCTAssertEqual(money(.nan, code: code), "—")
+        }
+    }
 }
 
 final class DateHelperTests: XCTestCase {

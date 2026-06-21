@@ -28,14 +28,18 @@ struct CurrencyOption: Identifiable {
 }
 
 struct CurrencyPickerView: View {
+    static let defaultFooter = "Picking a currency changes how amounts are written, not their value — existing numbers aren't converted."
+
     @Binding var selection: String
+    private let footer: String
     @Environment(\.dismiss) private var dismiss
     @State private var search = ""
 
     private let all: [CurrencyOption]
 
-    init(selection: Binding<String>) {
+    init(selection: Binding<String>, footer: String = CurrencyPickerView.defaultFooter) {
         _selection = selection
+        self.footer = footer
         all = Locale.commonISOCurrencyCodes
             .map(CurrencyOption.init)
             .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
@@ -54,40 +58,46 @@ struct CurrencyPickerView: View {
         List {
             Section {
             } footer: {
-                Text("Picking a currency changes how amounts are written, not their value — existing numbers aren't converted.")
+                Text(footer)
+                    .foregroundStyle(Spectrum.onCanvasSoft)
             }
+            .listRowBackground(Color.clear)
             ForEach(filtered) { option in
                 Button {
                     selection = option.code
                     dismiss()
                 } label: {
-                    HStack(spacing: Theme.Space.md) {
+                    HStack(spacing: 12) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(option.code)
                                 .font(.body.weight(.semibold))
-                                .foregroundStyle(Theme.ink)
+                                .foregroundStyle(Spectrum.onCanvas)
                             Text(option.name)
                                 .font(.caption)
-                                .foregroundStyle(Theme.inkSecondary)
+                                .foregroundStyle(Spectrum.onCanvasSoft)
                         }
                         Spacer()
                         if let symbol = option.symbol {
                             Text(symbol)
                                 .font(.body)
-                                .foregroundStyle(Theme.inkSecondary)
+                                .foregroundStyle(Spectrum.onCanvasSoft)
                         }
                         if option.code == selection {
                             Image(systemName: "checkmark")
                                 .font(.body.weight(.semibold))
-                                .foregroundStyle(Theme.green)
+                                .foregroundStyle(Spectrum.accent)
                         }
                     }
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .listRowBackground(Color.clear)
             }
         }
         .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .background(Spectrum.canvas.ignoresSafeArea())
+        .tint(Spectrum.accent)
         .searchable(text: $search, prompt: "Search currencies")
         .autocorrectionDisabled()
         .navigationTitle("Currency")

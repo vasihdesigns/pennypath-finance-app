@@ -12,8 +12,9 @@ import SwiftData
 
 @Model
 final class NetWorthSnapshot {
-    var date: Date
-    var value: Double
+    // Defaults keep the schema CloudKit-ready; `init` overwrites them.
+    var date: Date = Date.now
+    var value: Double = 0
 
     init(date: Date, value: Double) {
         self.date = date

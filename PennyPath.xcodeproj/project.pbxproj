@@ -6,15 +6,67 @@
 	objectVersion = 70;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		486C02E7E96C31438D373B84 /* PennyPathWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C658D2CFEE333A264DD2AE5 /* PennyPathWidgetBundle.swift */; };
+		A1758C1AF3760CF116602F1B /* QuickAddIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D079A49B9025693352B30DB /* QuickAddIntent.swift */; };
+		B69B16EBEA0E5DF07C53A369 /* PennyPathWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 9450565042BAB8A770021311 /* PennyPathWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		D1AB812FA4FEADC32467C9C7 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C725C3F8252EB507FDCF3B35 /* Foundation.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		1A0000000000000000000012 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1A0000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1A0000000000000000000004;
+			remoteInfo = PennyPath;
+		};
+		F6A1D397030F30F070840075 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1A0000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4F90431B3979947DF8969BDF;
+			remoteInfo = PennyPathWidgets;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		D121D4864631B7009883291E /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				B69B16EBEA0E5DF07C53A369 /* PennyPathWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		1A0000000000000000000005 /* PennyPath.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PennyPath.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1A0000000000000000000010 /* PennyPathTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PennyPathTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		4D079A49B9025693352B30DB /* QuickAddIntent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = QuickAddIntent.swift; path = ../PennyPath/App/QuickAddIntent.swift; sourceTree = "<group>"; };
+		7C658D2CFEE333A264DD2AE5 /* PennyPathWidgetBundle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PennyPathWidgetBundle.swift; sourceTree = "<group>"; };
+		9450565042BAB8A770021311 /* PennyPathWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PennyPathWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		C725C3F8252EB507FDCF3B35 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		1A0000000000000000000006 /* PennyPath */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = PennyPath; sourceTree = "<group>"; };
+		1A0000000000000000000006 /* PennyPath */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (1A00000000000000000000A0 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = PennyPath; sourceTree = "<group>"; };
 		1A0000000000000000000011 /* PennyPathTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = PennyPathTests; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		1A00000000000000000000A0 /* Exceptions for "PennyPath" folder in "PennyPath" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 1A0000000000000000000004 /* PennyPath */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		1A0000000000000000000008 /* Frameworks */ = {
@@ -31,25 +83,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		BC2900C1C543619132F97ABA /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D1AB812FA4FEADC32467C9C7 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
-
-/* Begin PBXContainerItemProxy section */
-		1A0000000000000000000012 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 1A0000000000000000000001 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 1A0000000000000000000004;
-			remoteInfo = PennyPath;
-		};
-/* End PBXContainerItemProxy section */
-
-/* Begin PBXTargetDependency section */
-		1A0000000000000000000013 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 1A0000000000000000000004 /* PennyPath */;
-			targetProxy = 1A0000000000000000000012 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
 
 /* Begin PBXGroup section */
 		1A0000000000000000000002 = {
@@ -58,6 +100,8 @@
 				1A0000000000000000000006 /* PennyPath */,
 				1A0000000000000000000011 /* PennyPathTests */,
 				1A0000000000000000000003 /* Products */,
+				CA0F20097AC3D6CBF4DD76CE /* Frameworks */,
+				E492236FF1B1EB259455BF41 /* PennyPathWidgets */,
 			);
 			sourceTree = "<group>";
 		};
@@ -66,8 +110,34 @@
 			children = (
 				1A0000000000000000000005 /* PennyPath.app */,
 				1A0000000000000000000010 /* PennyPathTests.xctest */,
+				9450565042BAB8A770021311 /* PennyPathWidgets.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		CA0F20097AC3D6CBF4DD76CE /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				CFA7846F09FC711F872645CA /* iOS */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		CFA7846F09FC711F872645CA /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				C725C3F8252EB507FDCF3B35 /* Foundation.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
+		E492236FF1B1EB259455BF41 /* PennyPathWidgets */ = {
+			isa = PBXGroup;
+			children = (
+				7C658D2CFEE333A264DD2AE5 /* PennyPathWidgetBundle.swift */,
+				4D079A49B9025693352B30DB /* QuickAddIntent.swift */,
+			);
+			path = PennyPathWidgets;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -80,17 +150,17 @@
 				1A0000000000000000000007 /* Sources */,
 				1A0000000000000000000008 /* Frameworks */,
 				1A0000000000000000000009 /* Resources */,
+				D121D4864631B7009883291E /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				FDB73B8874BE017224DA833A /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				1A0000000000000000000006 /* PennyPath */,
 			);
 			name = PennyPath;
-			packageProductDependencies = (
-			);
 			productName = PennyPath;
 			productReference = 1A0000000000000000000005 /* PennyPath.app */;
 			productType = "com.apple.product-type.application";
@@ -111,11 +181,26 @@
 				1A0000000000000000000011 /* PennyPathTests */,
 			);
 			name = PennyPathTests;
-			packageProductDependencies = (
-			);
 			productName = PennyPathTests;
 			productReference = 1A0000000000000000000010 /* PennyPathTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		4F90431B3979947DF8969BDF /* PennyPathWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6F2DC4AFBAAFF3BE91A93100 /* Build configuration list for PBXNativeTarget "PennyPathWidgets" */;
+			buildPhases = (
+				8D33F0670E1E5FCA17CB9E1B /* Sources */,
+				BC2900C1C543619132F97ABA /* Frameworks */,
+				8CB154D1A57BF8BE714E2EFE /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PennyPathWidgets;
+			productName = PennyPathWidgets;
+			productReference = 9450565042BAB8A770021311 /* PennyPathWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -152,12 +237,20 @@
 			targets = (
 				1A0000000000000000000004 /* PennyPath */,
 				1A0000000000000000000016 /* PennyPathTests */,
+				4F90431B3979947DF8969BDF /* PennyPathWidgets */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		1A0000000000000000000009 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8CB154D1A57BF8BE714E2EFE /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -181,7 +274,30 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		8D33F0670E1E5FCA17CB9E1B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				486C02E7E96C31438D373B84 /* PennyPathWidgetBundle.swift in Sources */,
+				A1758C1AF3760CF116602F1B /* QuickAddIntent.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		1A0000000000000000000013 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 1A0000000000000000000004 /* PennyPath */;
+			targetProxy = 1A0000000000000000000012 /* PBXContainerItemProxy */;
+		};
+		FDB73B8874BE017224DA833A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = PennyPathWidgets;
+			target = 4F90431B3979947DF8969BDF /* PennyPathWidgets */;
+			targetProxy = F6A1D397030F30F070840075 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		1A000000000000000000000C /* Debug */ = {
@@ -308,12 +424,16 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = PennyPath/PennyPath.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 256Q9H3B4S;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PennyPath/Info.plist;
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "PennyPath uses Face ID to unlock the app and keep your money private.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIBackgroundModes = "remote-notification";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -336,12 +456,16 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = PennyPath/PennyPath.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 256Q9H3B4S;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PennyPath/Info.plist;
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "PennyPath uses Face ID to unlock the app and keep your money private.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIBackgroundModes = "remote-notification";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -397,6 +521,63 @@
 			};
 			name = Release;
 		};
+		BAD37B10365DA937DFFD4C04 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 256Q9H3B4S;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PennyPathWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = PennyPath;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.vasih.PennyPath.PennyPathWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		D11CDD50A6656241E63DE01D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 256Q9H3B4S;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PennyPathWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = PennyPath;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.vasih.PennyPath.PennyPathWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -423,6 +604,15 @@
 			buildConfigurations = (
 				1A0000000000000000000017 /* Debug */,
 				1A0000000000000000000018 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6F2DC4AFBAAFF3BE91A93100 /* Build configuration list for PBXNativeTarget "PennyPathWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BAD37B10365DA937DFFD4C04 /* Release */,
+				D11CDD50A6656241E63DE01D /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
