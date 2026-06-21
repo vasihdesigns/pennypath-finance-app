@@ -80,8 +80,15 @@ final class AppStore {
     /// mirrors the real store to the user's private CloudKit database.
     static func makeContainer(isDemo: Bool, useCloudKit: Bool = false, storeURL: URL? = nil) -> (ModelContainer, StoreHealth) {
         func config(cloudKit: Bool) -> ModelConfiguration {
-            if isDemo { return ModelConfiguration(schema: schema, isStoredInMemoryOnly: true) }
-            if let storeURL { return ModelConfiguration(schema: schema, url: storeURL) }
+            // Demo and test stores must NEVER touch CloudKit. With the iCloud
+            // entitlement present, leaving `cloudKitDatabase` unspecified defaults
+            // it to `.automatic`, and SwiftData then tries to mirror the throwaway
+            // in-memory store to CloudKit — which aborts with an uncaught
+            // "No eligible connection available" on a real, iCloud-signed-in
+            // device (it's inert on the Simulator, which has no CloudKit). Pin
+            // these to `.none` so the demo world stays purely local.
+            if isDemo { return ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none) }
+            if let storeURL { return ModelConfiguration(schema: schema, url: storeURL, cloudKitDatabase: .none) }
             return ModelConfiguration(schema: schema, cloudKitDatabase: cloudKit ? .automatic : .none)
         }
         let wantsCloud = useCloudKit && !isDemo && storeURL == nil
@@ -106,7 +113,8 @@ final class AppStore {
                 return (fresh, .resetAfterFailure)
             }
             // Last resort: an empty in-memory store so the app still launches.
-            let fallback = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+            // `.none` for the same reason as above — never CloudKit-mirror it.
+            let fallback = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
             return (try! ModelContainer(for: schema, configurations: [fallback]),
                     isDemo ? .healthy : .inMemoryFallback)
         }

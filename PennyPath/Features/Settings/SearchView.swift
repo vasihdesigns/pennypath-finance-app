@@ -97,7 +97,7 @@ struct SearchView: View {
         .navigationBarTitleDisplayMode(.inline)
         .tint(Theme.ink)
         .overlay { overlay }
-        .sheet(item: $editingAccount) { AccountFormView(account: $0) }
+        .sheet(item: $editingAccount) { SpectrumEditAccountView(account: $0) }
         .sheet(item: $editingGoal) { GoalFormView(goal: $0) }
         .sheet(item: $editingExpense) { SpectrumAddItemView(expense: $0) }
         .sheet(item: $editingPayment) { SpectrumAddItemView(payment: $0) }

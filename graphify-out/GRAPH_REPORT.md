@@ -1,12 +1,12 @@
-# Graph Report - Personal finace all in one app  (2026-06-20)
+# Graph Report - Personal finace all in one app  (2026-06-21)
 
 ## Corpus Check
-- 65 files · ~152,798 words
+- 69 files · ~160,531 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 667 nodes · 1285 edges · 22 communities detected
-- Extraction: 71% EXTRACTED · 29% INFERRED · 0% AMBIGUOUS · INFERRED: 369 edges (avg confidence: 0.8)
+- 733 nodes · 1474 edges · 23 communities detected
+- Extraction: 69% EXTRACTED · 31% INFERRED · 0% AMBIGUOUS · INFERRED: 458 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
@@ -32,145 +32,150 @@
 - [[_COMMUNITY_Community 19|Community 19]]
 - [[_COMMUNITY_Community 20|Community 20]]
 - [[_COMMUNITY_Community 21|Community 21]]
+- [[_COMMUNITY_Community 22|Community 22]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `Font` - 49 edges
-2. `money()` - 31 edges
-3. `SpectrumAccountSubtype` - 25 edges
-4. `Account` - 21 edges
-5. `InsightsEngine` - 16 edges
-6. `SpectrumNetWorthView` - 16 edges
-7. `SpectrumGoalsView` - 15 edges
-8. `AccountCategory` - 14 edges
-9. `ExpenseCategory` - 14 edges
-10. `SpectrumBudgetView` - 13 edges
+1. `Font` - 52 edges
+2. `money()` - 33 edges
+3. `Account` - 30 edges
+4. `SpectrumAccountSubtype` - 25 edges
+5. `CurrencyConversionTests` - 19 edges
+6. `SpectrumNetWorthView` - 17 edges
+7. `InsightsEngine` - 16 edges
+8. `SpectrumGoalsView` - 15 edges
+9. `Goal` - 15 edges
+10. `AccountCategory` - 15 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Int` --calls--> `percentText()`  [INFERRED]
-   → PennyPath/Utilities/Money.swift  _Bridges community 6 → community 4_
+   → PennyPath/Utilities/Money.swift  _Bridges community 0 → community 7_
 - `SpectrumAccountSubtype` --inherits--> `String`  [EXTRACTED]
-  PennyPath/Features/Spectrum/SpectrumAddAccountView.swift →   _Bridges community 2 → community 6_
+  PennyPath/Features/Spectrum/SpectrumAddAccountView.swift →   _Bridges community 0 → community 8_
+- `CycleUnit` --inherits--> `String`  [EXTRACTED]
+  PennyPath/Models/UpcomingPayment.swift →   _Bridges community 0 → community 5_
 - `ExportFile` --inherits--> `Identifiable`  [EXTRACTED]
-  PennyPath/Features/Settings/SettingsView.swift →   _Bridges community 2 → community 5_
-- `Insight` --inherits--> `Identifiable`  [EXTRACTED]
-  PennyPath/Features/Coach/InsightsEngine.swift →   _Bridges community 2 → community 4_
-- `SpectrumOnboardPage` --inherits--> `Identifiable`  [EXTRACTED]
-  PennyPath/Features/Spectrum/SpectrumOnboardingView.swift →   _Bridges community 2 → community 0_
+  PennyPath/Features/Settings/SettingsView.swift →   _Bridges community 0 → community 3_
+- `CurrencyOption` --inherits--> `Identifiable`  [EXTRACTED]
+  PennyPath/Features/Settings/CurrencyPickerView.swift →   _Bridges community 0 → community 1_
 
 ## Communities
 
 ### Community 0 - "Community 0"
 Cohesion: 0.03
-Nodes (45): AccountFormView, FieldCard, AppLockManager, AppLockView, AmountField, ChipGrid, EmojiBadge, EmptyState (+37 more)
+Nodes (70): AccountCategory, cash, creditCard, investment, loan, otherAsset, otherDebt, property (+62 more)
 
 ### Community 1 - "Community 1"
-Cohesion: 0.07
-Nodes (15): ButtonStyle, PrimaryButtonStyle, PaywallView, SpectrumAddAccountEntryView, SpectrumAddAccountView, SpectrumGoalsView, SpectrumInsightsView, Spectrum (+7 more)
+Cohesion: 0.04
+Nodes (41): AccountFormView, FieldCard, AppLockManager, AppLockView, AmountField, ChipGrid, EmojiBadge, EmptyState (+33 more)
 
 ### Community 2 - "Community 2"
-Cohesion: 0.04
-Nodes (61): AccountCategory, cash, creditCard, investment, loan, otherAsset, otherDebt, property (+53 more)
+Cohesion: 0.06
+Nodes (13): ButtonStyle, Color, PrimaryButtonStyle, SoftButtonStyle, DemoData, PaywallView, SpectrumAddAccountView, SpectrumNetWorthView (+5 more)
 
 ### Community 3 - "Community 3"
-Cohesion: 0.07
-Nodes (11): CategoryBudget, Date, Expense, Goal, InsightsEngineTests, AccountTests, ExpenseTests, GoalTests (+3 more)
+Cohesion: 0.05
+Nodes (20): CloudBackup, Haptics, Equatable, ExpenseFormView, GoalFormView, ActivityView, ClearStep, backupChoice (+12 more)
 
 ### Community 4 - "Community 4"
-Cohesion: 0.1
-Nodes (16): Insight, InsightsEngine, Tone, neutral, positive, tip, warning, AppSettings (+8 more)
+Cohesion: 0.06
+Nodes (21): CategoryBudget, Codable, AccountDTO, BudgetDTO, DataExport, ExpenseDTO, GoalDTO, HoldingDTO (+13 more)
 
 ### Community 5 - "Community 5"
-Cohesion: 0.06
-Nodes (15): ArchivedView, Haptics, ExpenseFormView, GoalFormView, ActivityView, ExportFile, PlusUpsellRow, SettingsView (+7 more)
+Cohesion: 0.08
+Nodes (12): ArchivedView, money(), signedMoney(), MoneyTests, SearchView, SpectrumBudgetBurnBar, SpectrumGoalsView, CycleUnit (+4 more)
 
 ### Community 6 - "Community 6"
-Cohesion: 0.05
-Nodes (38): Pickable, Hashable, Int, PreciousMetal, PreciousMetalSearchView, AccountDetailField, counterparty, creditLimit (+30 more)
+Cohesion: 0.09
+Nodes (10): Account, CurrencyConversionTests, MockProvider, FXRates, _reset(), Holding, MarketDataProvider, MarketService (+2 more)
 
 ### Community 7 - "Community 7"
-Cohesion: 0.07
-Nodes (10): AppStore, StoreHealth, healthy, inMemoryFallback, resetAfterFailure, Holding, NetWorthHistory, NetWorthSnapshot (+2 more)
+Cohesion: 0.08
+Nodes (12): Date, Insight, InsightsEngine, Tone, neutral, positive, tip, warning (+4 more)
 
 ### Community 8 - "Community 8"
-Cohesion: 0.1
-Nodes (9): Account, CurrencyConversionTests, MockProvider, FXRates, _reset(), MarketDataProvider, MarketService, YahooMarketDataProvider (+1 more)
+Cohesion: 0.05
+Nodes (37): Pickable, Hashable, Market, Markets, PreciousMetal, PreciousMetalSearchView, AccountDetailField, counterparty (+29 more)
 
 ### Community 9 - "Community 9"
-Cohesion: 0.07
-Nodes (15): Color, DemoData, View, OnboardingArt, coach, goals, logo, netWorth (+7 more)
+Cohesion: 0.09
+Nodes (8): AppStore, StoreHealth, healthy, inMemoryFallback, resetAfterFailure, NetWorthHistory, SampleData, StoreBehaviorTests
 
 ### Community 10 - "Community 10"
 Cohesion: 0.1
-Nodes (12): SoftButtonStyle, Field, category, income, total, SpectrumBudgetView, CardStyle, Radius (+4 more)
+Nodes (6): View, AppSettings, currencySymbol(), SpectrumAddAccountEntryView, SpectrumEditAccountView, SpectrumInsightsView
 
 ### Community 11 - "Community 11"
-Cohesion: 0.14
-Nodes (3): HoldingFormView, Investments, SpectrumNetWorthView
+Cohesion: 0.1
+Nodes (23): AppIconView, AppStoreSearch, AppSuggestion, Item, Response, BackupError, unavailable, ImportError (+15 more)
 
 ### Community 12 - "Community 12"
-Cohesion: 0.12
-Nodes (6): InstrumentSearchView, MarketCatalogTests, InstrumentType, SymbolMatch, Market, Markets
+Cohesion: 0.16
+Nodes (4): InstrumentSearchView, MarketCatalogTests, InstrumentType, SymbolMatch
 
 ### Community 13 - "Community 13"
-Cohesion: 0.13
-Nodes (19): AppIconView, AppStoreSearch, AppSuggestion, Item, Response, Decodable, LocalizedError, Chart (+11 more)
+Cohesion: 0.14
+Nodes (11): ClearFlowDialogs, SpectrumGlassPill, SpectrumPanelStyle, SpectrumPlusButton, View, CardStyle, Radius, Space (+3 more)
 
 ### Community 14 - "Community 14"
-Cohesion: 0.32
-Nodes (10): Codable, AccountDTO, BudgetDTO, DataExport, ExpenseDTO, GoalDTO, HoldingDTO, Snapshot (+2 more)
+Cohesion: 0.16
+Nodes (3): HoldingFormView, Investments, Store
 
 ### Community 15 - "Community 15"
+Cohesion: 0.24
+Nodes (4): Shape, SpectrumBudgetView, SpectrumMeter, VLine
+
+### Community 16 - "Community 16"
 Cohesion: 0.25
 Nodes (8): Topic, budget, cushion, general, goals, netWorth, spending, subscriptions
 
-### Community 16 - "Community 16"
+### Community 17 - "Community 17"
 Cohesion: 0.33
 Nodes (3): AppIntent, AddExpenseIntent, QuickAddCoordinator
 
-### Community 17 - "Community 17"
+### Community 18 - "Community 18"
 Cohesion: 0.4
 Nodes (4): PennyPathMigrationPlan, PennyPathSchemaV1, SchemaMigrationPlan, VersionedSchema
 
-### Community 18 - "Community 18"
+### Community 19 - "Community 19"
 Cohesion: 0.4
 Nodes (4): ControlWidget, AddExpenseControl, PennyPathWidgetBundle, WidgetBundle
 
-### Community 19 - "Community 19"
+### Community 20 - "Community 20"
 Cohesion: 0.67
 Nodes (2): AppShortcutsProvider, PennyPathShortcuts
 
-### Community 20 - "Community 20"
+### Community 21 - "Community 21"
 Cohesion: 0.67
 Nodes (2): App, PennyPathApp
 
-### Community 21 - "Community 21"
+### Community 22 - "Community 22"
 Cohesion: 0.67
 Nodes (1): SupportLinks
 
 ## Knowledge Gaps
-- **110 isolated node(s):** `system`, `light`, `dark`, `healthy`, `resetAfterFailure` (+105 more)
+- **112 isolated node(s):** `system`, `light`, `dark`, `healthy`, `resetAfterFailure` (+107 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **Thin community `Community 19`** (3 nodes): `AppShortcutsProvider`, `PennyPathShortcuts.swift`, `PennyPathShortcuts`
+- **Thin community `Community 20`** (3 nodes): `AppShortcutsProvider`, `PennyPathShortcuts.swift`, `PennyPathShortcuts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 20`** (3 nodes): `App`, `PennyPathApp.swift`, `PennyPathApp`
+- **Thin community `Community 21`** (3 nodes): `App`, `PennyPathApp.swift`, `PennyPathApp`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 21`** (3 nodes): `SupportLinks.swift`, `SupportLinks`, `.supportMailURL()`
+- **Thin community `Community 22`** (3 nodes): `SupportLinks.swift`, `SupportLinks`, `.supportMailURL()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Font` connect `Community 1` to `Community 0`, `Community 4`, `Community 5`, `Community 6`, `Community 9`, `Community 10`, `Community 11`?**
-  _High betweenness centrality (0.091) - this node is a cross-community bridge._
-- **Why does `Account` connect `Community 8` to `Community 2`, `Community 3`, `Community 7`, `Community 9`, `Community 11`?**
-  _High betweenness centrality (0.071) - this node is a cross-community bridge._
-- **Why does `money()` connect `Community 4` to `Community 1`, `Community 5`, `Community 6`, `Community 10`, `Community 11`?**
+- **Why does `Font` connect `Community 2` to `Community 0`, `Community 3`, `Community 5`, `Community 10`, `Community 13`, `Community 14`, `Community 15`?**
+  _High betweenness centrality (0.083) - this node is a cross-community bridge._
+- **Why does `money()` connect `Community 5` to `Community 0`, `Community 2`, `Community 6`, `Community 7`, `Community 10`, `Community 15`?**
+  _High betweenness centrality (0.073) - this node is a cross-community bridge._
+- **Why does `Account` connect `Community 6` to `Community 0`, `Community 2`, `Community 4`, `Community 7`, `Community 9`, `Community 14`?**
   _High betweenness centrality (0.069) - this node is a cross-community bridge._
-- **Are the 45 inferred relationships involving `Font` (e.g. with `.resultRow()` and `.featureRow()`) actually correct?**
-  _`Font` has 45 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 30 inferred relationships involving `money()` (e.g. with `.accountRow()` and `.holdingRow()`) actually correct?**
-  _`money()` has 30 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 48 inferred relationships involving `Font` (e.g. with `.resultRow()` and `.featureRow()`) actually correct?**
+  _`Font` has 48 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 32 inferred relationships involving `money()` (e.g. with `.accountRow()` and `.holdingRow()`) actually correct?**
+  _`money()` has 32 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 27 inferred relationships involving `Account` (e.g. with `.fill()` and `.seed()`) actually correct?**
+  _`Account` has 27 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `system`, `light`, `dark` to the rest of the system?**
-  _110 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `Community 0` be split into smaller, more focused modules?**
-  _Cohesion score 0.03 - nodes in this community are weakly interconnected._
+  _112 weakly-connected nodes found - possible documentation gaps or missing edges._

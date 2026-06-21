@@ -42,7 +42,11 @@ struct PennyPathApp: App {
                 }
             }
             .animation(.easeInOut(duration: 0.4), value: didOnboard)
-            .animation(.easeInOut(duration: 0.2), value: lock.isLocked)
+            // The lock cover is applied WITHOUT an implicit animation here, so it
+            // snaps into place the instant the app goes inactive — before iOS takes
+            // the app-switcher snapshot. A fade-in would let balances bleed through
+            // that snapshot for a frame. The unlock fade is driven by an explicit
+            // `withAnimation` in `AppLockManager` instead (see AppLock.swift).
             .preferredColorScheme((AppAppearance(rawValue: appearance) ?? .system).colorScheme)
             .onChange(of: scenePhase) { _, phase in
                 switch phase {

@@ -254,22 +254,43 @@ final class MarketService {
         // 2. Apply prices, converting each holding's currency with the shared table.
         for holding in holdings {
             guard let quote = quotes[holding.symbol] else { continue }
-            holding.cachedPrice = quote.price
-            holding.quoteCurrency = quote.currency
+            // Today's move is a ratio, so the quote's unit cancels out.
             if let prev = quote.previousClose, prev > 0 {
                 holding.cachedChangePercent = (quote.price - prev) / prev
             }
+            // Some exchanges quote a security in a currency's MINOR unit — London
+            // in pence (GBp), Tel Aviv in agorot (ILA), Johannesburg in cents
+            // (ZAc). FX tables only know the major unit (GBP/ILS/ZAR), so map the
+            // currency to its major and scale the price into that unit before
+            // converting; otherwise a £25 holding quoted as 2500 GBp would be
+            // counted as 2500, not 25.
+            let (currency, priceFactor) = MarketService.normalizedQuoteCurrency(quote.currency)
+            holding.quoteCurrency = currency
+            holding.cachedPrice = quote.price * priceFactor
+
             // Keep curated names for metals — the futures quote name is the
             // contract month (e.g. "Gold Aug 26"), not a useful label.
             if let name = quote.name, !name.isEmpty, !InstrumentType.isMetal(holding.assetType) {
                 holding.companyName = name
             }
-            // Prefer the shared rate; fall back to last known (never blindly 1
-            // for a foreign currency).
-            let rate = FXRates.rateToBase(quote.currency, base: displayCurrency)
-                ?? (quote.currency == displayCurrency ? 1 : holding.cachedFXRate)
-            holding.cachedFXRate = rate
-            holding.cachedValueInBase = holding.shares * quote.price * rate
+
+            // Convert with the shared rate. Never fabricate 1:1 for a foreign
+            // currency: prefer the live rate, then a real rate cached from a prior
+            // refresh, otherwise leave the value pending (0) until a refresh fills
+            // it in — exactly how foreign accounts behave, so net worth is never
+            // silently wrong (a brand-new holding's cachedFXRate is 1 by default,
+            // which must not be mistaken for a real foreign rate).
+            if let rate = FXRates.rateToBase(currency, base: displayCurrency) {
+                holding.cachedFXRate = rate
+                holding.cachedValueInBase = holding.shares * holding.cachedPrice * rate
+            } else if currency == displayCurrency {
+                holding.cachedFXRate = 1
+                holding.cachedValueInBase = holding.shares * holding.cachedPrice
+            } else if holding.cachedFXRate > 0, holding.cachedFXRate != 1 {
+                holding.cachedValueInBase = holding.shares * holding.cachedPrice * holding.cachedFXRate
+            } else {
+                holding.cachedValueInBase = 0
+            }
             holding.lastUpdated = .now
         }
 
@@ -291,6 +312,19 @@ final class MarketService {
         }
         FXRates.update(base: base, rates: rates)
         return true
+    }
+
+    /// Map a quote currency to the major ISO unit the FX table understands, plus a
+    /// factor to scale the price into that unit. Some exchanges quote in a minor
+    /// unit (pence, agorot, cents) that no FX source lists. Unknown codes pass
+    /// through unchanged with a factor of 1.
+    nonisolated static func normalizedQuoteCurrency(_ code: String) -> (code: String, priceFactor: Double) {
+        switch code {
+        case "GBp", "GBX": return ("GBP", 0.01)   // London — pence
+        case "ILA", "ILa": return ("ILS", 0.01)   // Tel Aviv — agorot
+        case "ZAc", "ZAX": return ("ZAR", 0.01)   // Johannesburg — cents
+        default:           return (code, 1)
+        }
     }
 
     /// Snap each manual account's cached rate to the shared table. Base-currency

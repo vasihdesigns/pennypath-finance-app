@@ -111,6 +111,16 @@ final class StoreBehaviorTests: XCTestCase {
         XCTAssertEqual(count(Account.self), 0, "no stray $0 Investments account lingers")
     }
 
+    // MARK: Demo Mode
+
+    func testDemoContainerSeedsWithoutCrashing() {
+        let (demo, health) = AppStore.makeContainer(isDemo: true)
+        let ctx = ModelContext(demo)
+        XCTAssertEqual(health, .healthy)
+        XCTAssertGreaterThan((try? ctx.fetchCount(FetchDescriptor<Account>())) ?? 0, 0)
+        XCTAssertGreaterThan((try? ctx.fetchCount(FetchDescriptor<UpcomingPayment>())) ?? 0, 0)
+    }
+
     // MARK: Store recovery
 
     func testUnreadableStoreIsSetAsideAndReplacedWithAFreshOne() throws {

@@ -15,7 +15,7 @@ import Foundation
 import SwiftData
 
 enum DataExport {
-    static let schemaVersion = "1.0.0"
+    static let schemaVersion = "1.1.0"
 
     // MARK: Snapshot
 
@@ -37,6 +37,10 @@ enum DataExport {
         var isMarketLinked: Bool, currencyCode: String, notes: String
         var institution: String, counterparty: String
         var interestRate: Double, creditLimit: Double, dueDate: Date?
+        // Archive state is real user data — a backup that drops it would silently
+        // un-archive everything on restore. `isMarketLinked` above lets an importer
+        // skip the auto-managed Investments account and rebuild it from holdings.
+        var isArchived: Bool, archivedAt: Date?
     }
     struct HoldingDTO: Codable {
         var symbol: String, companyName: String, shares: Double, assetType: String
@@ -48,6 +52,7 @@ enum DataExport {
     struct GoalDTO: Codable {
         var name: String, emoji: String, targetAmount: Double, savedAmount: Double
         var targetDate: Date?, createdAt: Date
+        var isArchived: Bool, archivedAt: Date?
     }
     struct BudgetDTO: Codable {
         var category: String, monthlyLimit: Double
@@ -56,6 +61,7 @@ enum DataExport {
         var name: String, amount: Double, category: String, nextDueDate: Date
         var createdAt: Date, isSubscription: Bool, cycleUnit: String
         var cycleInterval: Int, autoRenew: Bool, remindMe: Bool, note: String
+        var iconURL: String
     }
     struct SnapshotDTO: Codable {
         var date: Date, value: Double
@@ -74,7 +80,8 @@ enum DataExport {
                            currencyCode: $0.currencyCode, notes: $0.notes,
                            institution: $0.institution, counterparty: $0.counterparty,
                            interestRate: $0.interestRate, creditLimit: $0.creditLimit,
-                           dueDate: $0.dueDate)
+                           dueDate: $0.dueDate,
+                           isArchived: $0.isArchived, archivedAt: $0.archivedAt)
             },
             holdings: all(Holding.self).map {
                 HoldingDTO(symbol: $0.symbol, companyName: $0.companyName, shares: $0.shares,
@@ -86,7 +93,8 @@ enum DataExport {
             },
             goals: all(Goal.self).map {
                 GoalDTO(name: $0.name, emoji: $0.emoji, targetAmount: $0.targetAmount,
-                        savedAmount: $0.savedAmount, targetDate: $0.targetDate, createdAt: $0.createdAt)
+                        savedAmount: $0.savedAmount, targetDate: $0.targetDate, createdAt: $0.createdAt,
+                        isArchived: $0.isArchived, archivedAt: $0.archivedAt)
             },
             budgets: all(CategoryBudget.self).map {
                 BudgetDTO(category: $0.categoryRaw, monthlyLimit: $0.monthlyLimit)
@@ -96,7 +104,7 @@ enum DataExport {
                                    nextDueDate: $0.nextDueDate, createdAt: $0.createdAt,
                                    isSubscription: $0.isSubscription, cycleUnit: $0.cycleUnitRaw,
                                    cycleInterval: $0.cycleInterval, autoRenew: $0.autoRenew,
-                                   remindMe: $0.remindMe, note: $0.note)
+                                   remindMe: $0.remindMe, note: $0.note, iconURL: $0.iconURL)
             },
             netWorthHistory: all(NetWorthSnapshot.self).map {
                 SnapshotDTO(date: $0.date, value: $0.value)
@@ -128,4 +136,111 @@ enum DataExport {
         f.locale = Locale(identifier: "en_US_POSIX")
         return f
     }()
+
+    // MARK: Import (restore)
+
+    struct ImportSummary {
+        var accounts = 0, holdings = 0, expenses = 0, goals = 0
+        var budgets = 0, payments = 0, snapshots = 0
+    }
+
+    enum ImportError: LocalizedError {
+        case notPennyPath
+        var errorDescription: String? {
+            switch self {
+            case .notPennyPath: return "That file isn't a PennyPath backup."
+            }
+        }
+    }
+
+    /// Restore a backup: REPLACES everything in the store with the snapshot's
+    /// contents. The auto-managed Investments account is rebuilt from the imported
+    /// holdings (not restored directly), so it never double-counts. Foreign-currency
+    /// accounts come back with a neutral FX cache and re-convert on the next market
+    /// refresh — until then they read as "pending" rather than wrong.
+    @discardableResult
+    static func importSnapshot(from data: Data, into context: ModelContext) throws -> ImportSummary {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let snapshot = try decoder.decode(Snapshot.self, from: data)
+        guard snapshot.app == "PennyPath" else { throw ImportError.notPennyPath }
+
+        deleteAll(in: context)
+        var summary = ImportSummary()
+
+        let holdings = snapshot.holdings.map { dto in
+            Holding(symbol: dto.symbol, companyName: dto.companyName, shares: dto.shares,
+                    assetType: dto.assetType, quoteCurrency: dto.quoteCurrency,
+                    cachedPrice: dto.cachedPrice, createdAt: dto.createdAt)
+        }
+        holdings.forEach { context.insert($0); summary.holdings += 1 }
+
+        for dto in snapshot.accounts where !dto.isMarketLinked {
+            let account = Account(
+                name: dto.name,
+                category: AccountCategory(rawValue: dto.category) ?? .cash,
+                balance: dto.balance, createdAt: dto.createdAt,
+                currencyCode: dto.currencyCode, notes: dto.notes,
+                institution: dto.institution, counterparty: dto.counterparty,
+                interestRate: dto.interestRate, creditLimit: dto.creditLimit,
+                dueDate: dto.dueDate)
+            account.isArchived = dto.isArchived
+            account.archivedAt = dto.archivedAt
+            context.insert(account)
+            summary.accounts += 1
+        }
+
+        // Rebuild the linked Investments account from the imported holdings.
+        Investments.rebuild(holdings: holdings, in: context)
+
+        for dto in snapshot.expenses {
+            context.insert(Expense(amount: dto.amount,
+                                   category: ExpenseCategory(rawValue: dto.category) ?? .other,
+                                   note: dto.note, date: dto.date))
+            summary.expenses += 1
+        }
+        for dto in snapshot.goals {
+            let goal = Goal(name: dto.name, emoji: dto.emoji, targetAmount: dto.targetAmount,
+                            savedAmount: dto.savedAmount, targetDate: dto.targetDate, createdAt: dto.createdAt)
+            goal.isArchived = dto.isArchived
+            goal.archivedAt = dto.archivedAt
+            context.insert(goal)
+            summary.goals += 1
+        }
+        for dto in snapshot.budgets {
+            context.insert(CategoryBudget(category: ExpenseCategory(rawValue: dto.category) ?? .other,
+                                          monthlyLimit: dto.monthlyLimit))
+            summary.budgets += 1
+        }
+        for dto in snapshot.upcomingPayments {
+            context.insert(UpcomingPayment(
+                name: dto.name, amount: dto.amount,
+                category: ExpenseCategory(rawValue: dto.category),
+                isSubscription: dto.isSubscription,
+                cycleUnit: CycleUnit(rawValue: dto.cycleUnit) ?? .month,
+                cycleInterval: dto.cycleInterval, autoRenew: dto.autoRenew,
+                remindMe: dto.remindMe, note: dto.note, iconURL: dto.iconURL,
+                nextDueDate: dto.nextDueDate, createdAt: dto.createdAt))
+            summary.payments += 1
+        }
+        for dto in snapshot.netWorthHistory {
+            context.insert(NetWorthSnapshot(date: dto.date, value: dto.value))
+            summary.snapshots += 1
+        }
+
+        if context.hasChanges { try context.save() }
+        // The store is no longer empty, so first-run sample seeding must not fire.
+        UserDefaults.standard.set(true, forKey: SampleData.seededKey)
+        return summary
+    }
+
+    private static func deleteAll(in context: ModelContext) {
+        try? context.delete(model: Account.self)
+        try? context.delete(model: Expense.self)
+        try? context.delete(model: Goal.self)
+        try? context.delete(model: CategoryBudget.self)
+        try? context.delete(model: NetWorthSnapshot.self)
+        try? context.delete(model: Holding.self)
+        try? context.delete(model: UpcomingPayment.self)
+    }
 }

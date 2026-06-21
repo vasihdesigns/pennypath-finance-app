@@ -14,7 +14,7 @@ import SwiftUI
 
 // MARK: - Page model
 
-private enum SpectrumOnboardArt { case deck, netWorth, expenses, goals, insights }
+private enum SpectrumOnboardArt { case deck, netWorth, expenses, goals, insights, privacy }
 
 private struct SpectrumOnboardPage: Identifiable {
     let id = UUID()
@@ -48,7 +48,10 @@ struct SpectrumOnboardingView: View {
               message: "Watch goals fill up and net-worth milestones light up as you climb."),
         .init(art: .insights, accent: Spectrum.accentSoft,
               title: "Tips made just for you",
-              message: "Quiet, private insights drawn from your own numbers — never leaving your device.")
+              message: "Quiet, private insights drawn from your own numbers — never leaving your device."),
+        .init(art: .privacy, accent: Spectrum.good,
+              title: "Yours, and yours alone",
+              message: "No sign-up, no servers, no tracking. Your money stays on your iPhone and syncs only through your own iCloud.")
     ]
 
     private var lastIndex: Int { pages.count - 1 }
@@ -204,6 +207,7 @@ private struct SpectrumOnboardArtView: View {
             case .expenses:  expenses
             case .goals:     goals
             case .insights:  insights
+            case .privacy:   privacy
             }
         }
         .scaleEffect(isActive ? 1 : 0.92)
@@ -392,6 +396,54 @@ private struct SpectrumOnboardArtView: View {
                     .padding(.vertical, 2).offset(x: -14)
             }
         }
+    }
+
+    // MARK: Privacy — a shield over the two places your data ever lives
+
+    private var privacy: some View {
+        panel {
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle().fill(accent.opacity(0.18)).frame(width: 48, height: 48)
+                    Image(systemName: "lock.shield.fill")
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundStyle(accent)
+                        .scaleEffect(isActive ? 1 : 0.5)
+                        .animation(.spring(response: 0.5, dampingFraction: 0.6), value: isActive)
+                }
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Private by design")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Spectrum.onCanvas)
+                    Text("No account. No analytics. No one but you.")
+                        .font(.system(size: 12.5))
+                        .foregroundStyle(Spectrum.onCanvasSoft)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            privacyRow("iphone", "Saved on this iPhone", delay: 0.16)
+            privacyRow("icloud.fill", "Synced through your iCloud", delay: 0.28)
+        }
+    }
+
+    /// One destination your data can live, ticked off — animates in from the left.
+    private func privacyRow(_ symbol: String, _ label: String, delay: Double) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: symbol)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(accent)
+                .frame(width: 22)
+            Text(label)
+                .font(.system(size: 13.5, weight: .medium))
+                .foregroundStyle(Spectrum.onCanvas)
+            Spacer()
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 16))
+                .foregroundStyle(Spectrum.good)
+        }
+        .opacity(isActive ? 1 : 0)
+        .offset(x: isActive ? 0 : -12)
+        .animation(.spring(response: 0.5, dampingFraction: 0.82).delay(delay), value: isActive)
     }
 
     // MARK: Shared pieces

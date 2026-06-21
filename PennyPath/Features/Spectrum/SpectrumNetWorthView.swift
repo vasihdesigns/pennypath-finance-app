@@ -28,6 +28,7 @@ struct SpectrumNetWorthView: View {
 
     @State private var market = MarketService()
     @State private var showingAdd = false
+    @State private var addKind: SpectrumMoneyKind?
     @State private var editingAccount: Account?
     @State private var showingSearch = false
     @State private var editingHolding: Holding?
@@ -162,7 +163,8 @@ struct SpectrumNetWorthView: View {
                 .padding(.bottom, 58)   // sit just above the floating tab bar
         }
         .sheet(isPresented: $showingAdd) { SpectrumAddAccountView() }
-        .sheet(item: $editingAccount) { AccountFormView(account: $0) }
+        .sheet(item: $addKind) { SpectrumAddAccountView(initialKind: $0) }
+        .sheet(item: $editingAccount) { SpectrumEditAccountView(account: $0) }
         .sheet(isPresented: $showingSearch) { HoldingSearchView(service: market) }
         .sheet(item: $editingHolding) { holding in
             NavigationStack { HoldingFormView(holding: holding) }
@@ -231,6 +233,8 @@ struct SpectrumNetWorthView: View {
                                    onDelete: { deleteHolding(holding) })
                         }
                         addRow("Add an investment", kind: kind, cardIsDark: cardIsDark) { showingSearch = true }
+                    } else {
+                        addRow(addTitle(for: kind), kind: kind, cardIsDark: cardIsDark) { addKind = kind }
                     }
                 }
                 .padding(.top, 12)
@@ -344,6 +348,19 @@ struct SpectrumNetWorthView: View {
                                            style: StrokeStyle(lineWidth: 1.4, dash: [6, 5])))
         }
         .buttonStyle(.plain)
+    }
+
+    /// Label for the dashed "add" row inside an expanded card — names the kind so
+    /// the button reads as adding to that specific card. Picking it opens the Add
+    /// Account flow with that group already expanded.
+    private func addTitle(for kind: SpectrumMoneyKind) -> String {
+        switch kind {
+        case .cash:       return "Add cash or savings"
+        case .investment: return "Add an investment"
+        case .property:   return "Add property"
+        case .receivable: return "Add money owed to you"
+        case .liability:  return "Add a debt"
+        }
     }
 
     /// Soft-hide an account — it leaves the deck and every total at once, but the

@@ -34,7 +34,7 @@ final class AppLockManager {
         set {
             UserDefaults.standard.set(newValue, forKey: Self.enabledKey)
             // Turning it off here-and-now should immediately reveal the app.
-            if !newValue { isLocked = false }
+            if !newValue { withAnimation(.easeInOut(duration: 0.2)) { isLocked = false } }
         }
     }
 
@@ -71,14 +71,14 @@ final class AppLockManager {
             // No biometrics and no passcode set — don't trap the user out of
             // their own data; reveal the app rather than locking forever.
             Self.logger.error("Cannot evaluate auth policy: \(error?.localizedDescription ?? "unknown", privacy: .public)")
-            isLocked = false
+            withAnimation(.easeInOut(duration: 0.2)) { isLocked = false }
             return
         }
 
         do {
             let ok = try await context.evaluatePolicy(.deviceOwnerAuthentication,
                                                       localizedReason: "Unlock PennyPath to see your money.")
-            if ok { isLocked = false }
+            if ok { withAnimation(.easeInOut(duration: 0.2)) { isLocked = false } }
         } catch {
             // Cancelled or failed — stay locked; the lock screen offers a retry.
             Self.logger.notice("Auth not completed: \(error.localizedDescription, privacy: .public)")

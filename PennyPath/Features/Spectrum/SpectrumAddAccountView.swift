@@ -195,6 +195,10 @@ struct SpectrumAddAccountView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var scheme
 
+    /// When set, that group opens pre-expanded — e.g. launched from a specific
+    /// Net Worth card so its sub-types are right there.
+    var initialKind: SpectrumMoneyKind? = nil
+
     @State private var expanded: SpectrumMoneyKind?
     @State private var entrySubtype: SpectrumAccountSubtype?
     @State private var marketFlow: MarketFlow?
@@ -238,6 +242,7 @@ struct SpectrumAddAccountView: View {
                 }
             }
             .tint(Spectrum.accent)
+            .onAppear { if expanded == nil { expanded = initialKind } }
         }
     }
 

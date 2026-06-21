@@ -19,7 +19,10 @@ private enum PaywallPlan: String, CaseIterable, Identifiable {
 
     var title: String { self == .yearly ? "Yearly" : "Monthly" }
 
-    /// Headline price for the card.
+    /// The StoreKit product backing this plan.
+    var productID: String { self == .yearly ? Store.yearlyID : Store.monthlyID }
+
+    /// Fallback headline price, shown only until the live product loads.
     var price: String { self == .yearly ? "39.99" : "4.99" }
     var per: String { self == .yearly ? "/year" : "/month" }
 
@@ -46,6 +49,8 @@ struct PaywallView: View {
     @State private var plan: PaywallPlan = .yearly
     @State private var appear = false
     @State private var float = false
+    @State private var store = Store.shared
+    @State private var showUnavailable = false
 
     /// The five deck tones, used for the card gradient and feature icons.
     private let jewels: [Color] = SpectrumMoneyKind.allCases.map(\.fill)
@@ -81,6 +86,11 @@ struct PaywallView: View {
         .onAppear {
             appear = true
             float = true
+        }
+        .alert("Not available right now", isPresented: $showUnavailable) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("PennyPath Plus couldn't be loaded. Check your connection and try again in a moment.")
         }
     }
 
@@ -258,10 +268,8 @@ struct PaywallView: View {
                 Text(p.title)
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Spectrum.onCanvasSoft)
-                HStack(alignment: .firstTextBaseline, spacing: 1) {
-                    Text(AppSettings.currencySymbol)
-                        .font(.system(size: 16, weight: .bold))
-                    Text(p.price)
+                HStack(alignment: .firstTextBaseline, spacing: 2) {
+                    Text(priceText(p))
                         .font(.system(size: 26, weight: .bold))
                     Text(p.per)
                         .font(.system(size: 13, weight: .medium))
@@ -316,11 +324,9 @@ struct PaywallView: View {
     private var callToAction: some View {
         VStack(spacing: 10) {
             Button {
-                Haptics.success()
-                // Presentational paywall — wire StoreKit 2 purchase here.
-                dismiss()
+                Task { await purchaseSelected() }
             } label: {
-                Text("Start 7-day free trial")
+                Text(ctaTitle)
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(Spectrum.plusInk)
                     .frame(maxWidth: .infinity)
@@ -328,7 +334,8 @@ struct PaywallView: View {
                     .background(Spectrum.plus, in: Capsule())
             }
             .buttonStyle(.plain)
-            Text(plan.finePrint)
+            .disabled(store.isWorking || store.isPlus)
+            Text(finePrint)
                 .font(.system(size: 12))
                 .foregroundStyle(Spectrum.onCanvasSoft)
                 .multilineTextAlignment(.center)
@@ -338,14 +345,53 @@ struct PaywallView: View {
         .animation(.spring(response: 0.5, dampingFraction: 0.85).delay(0.5), value: appear)
     }
 
+    /// Whether the selected plan's live product carries an introductory (free
+    /// trial) offer — drives whether we promise a trial in the copy.
+    private var hasIntroOffer: Bool {
+        store.product(plan.productID)?.subscription?.introductoryOffer != nil
+    }
+
+    private var ctaTitle: String {
+        if store.isPlus { return "You're a member ✓" }
+        if store.isWorking { return "Please wait…" }
+        return hasIntroOffer ? "Start free trial" : "Subscribe"
+    }
+
+    /// Live price/period when the product is loaded; otherwise the static design copy.
+    private var finePrint: String {
+        if store.isPlus { return "Thanks for supporting PennyPath." }
+        guard let product = store.product(plan.productID) else { return plan.finePrint }
+        let priced = product.displayPrice + plan.per
+        return hasIntroOffer ? "Free trial, then \(priced). Cancel anytime."
+                             : "\(priced). Cancel anytime."
+    }
+
+    private func priceText(_ p: PaywallPlan) -> String {
+        store.product(p.productID)?.displayPrice ?? "\(AppSettings.currencySymbol)\(p.price)"
+    }
+
+    private func purchaseSelected() async {
+        guard let product = store.product(plan.productID) else {
+            // No product configured/reachable — never a fake success.
+            showUnavailable = true
+            return
+        }
+        Haptics.tap()
+        if await store.purchase(product) { dismiss() }
+    }
+
     // MARK: Footer
 
     private var footer: some View {
         HStack(spacing: 10) {
             Button("Restore") {
                 Haptics.tap()
-                // Wire StoreKit restore here.
+                Task {
+                    await store.restore()
+                    if store.isPlus { dismiss() }
+                }
             }
+            .disabled(store.isWorking)
             divider
             Link("Terms", destination: SupportLinks.terms)
             divider
